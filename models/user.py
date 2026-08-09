@@ -25,5 +25,19 @@ class User(db.Model):
         onupdate=datetime.utcnow
     )
 
+    # Relationships
+    categories = db.relationship(
+        "Category",
+        back_populates="user",
+        lazy=True
+    )
+
+    ledger_entries = db.relationship(
+        "Ledger",
+        back_populates="user",
+        cascade="all, delete-orphan",
+        lazy=True
+    )
+
     def __repr__(self):
         return f"<User {self.email}>"

@@ -4,7 +4,7 @@ from config import Config
 from extensions import db, migrate
 
 # Import models so Flask-Migrate can discover them
-from models import User
+from models import *
 
 from routes.home import home_bp
 
