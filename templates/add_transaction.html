@@ -1,0 +1,141 @@
+{% extends "base.html" %}
+
+{% block content %}
+
+<div class="transaction-container">
+
+    <h1>Add Transaction</h1>
+
+    <form method="POST">
+
+        <div>
+            <label for="description">Description *</label>
+
+            <input
+                type="text"
+                id="description"
+                name="description"
+                placeholder="e.g. Dosa"
+                required
+            >
+        </div>
+
+        <div>
+            <label for="amount">Amount *</label>
+
+            <input
+                type="number"
+                id="amount"
+                name="amount"
+                step="0.01"
+                min="0.01"
+                placeholder="e.g. 60"
+                required
+            >
+        </div>
+
+        <div>
+            <label for="category_id">Category *</label>
+
+            <select id="category_id" name="category_id" required>
+
+                <option value="">Select category</option>
+
+                {% for category in categories %}
+                    <option value="{{ category.id }}">
+                        {{ category.name }}
+                    </option>
+                {% endfor %}
+
+            </select>
+        </div>
+
+        <div>
+            <label for="entry_type">Type *</label>
+
+            <select id="entry_type" name="entry_type" required>
+
+                {% for entry in entry_types %}
+                    <option value="{{ entry.value }}">
+                        {{ entry.value }}
+                    </option>
+                {% endfor %}
+
+            </select>
+        </div>
+
+        <div>
+            <label for="payment_method">Payment Method *</label>
+
+            <select
+                id="payment_method"
+                name="payment_method"
+                required
+            >
+
+                {% for method in payment_methods %}
+                    <option value="{{ method.value }}">
+                        {{ method.value }}
+                    </option>
+                {% endfor %}
+
+            </select>
+        </div>
+
+        <div>
+            <label for="merchant">Merchant</label>
+
+            <input
+                type="text"
+                id="merchant"
+                name="merchant"
+                placeholder="e.g. Swiggy"
+            >
+        </div>
+
+        <div>
+            <label for="payment_provider">Payment Provider</label>
+
+            <input
+                type="text"
+                id="payment_provider"
+                name="payment_provider"
+                placeholder="e.g. Google Pay"
+            >
+        </div>
+
+        <div>
+            <label for="transaction_date">Date</label>
+
+            <input
+                type="date"
+                id="transaction_date"
+                name="transaction_date"
+            >
+        </div>
+
+        <div>
+            <label for="notes">Notes</label>
+
+            <textarea
+                id="notes"
+                name="notes"
+                placeholder="Optional notes"
+            ></textarea>
+        </div>
+
+        <button type="submit">
+            Add Transaction
+        </button>
+
+    </form>
+
+    <p>
+        <a href="{{ url_for('dashboard.dashboard') }}">
+            Back to Dashboard
+        </a>
+    </p>
+
+</div>
+
+{% endblock %}

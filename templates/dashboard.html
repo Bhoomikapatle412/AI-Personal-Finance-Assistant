@@ -7,16 +7,155 @@
     <h1>Welcome, {{ user.full_name }}!</h1>
 
     <p>
-        You are successfully logged in.
+        Here's an overview of your finances.
     </p>
 
-    <p>
-        Your AI Personal Finance Assistant dashboard will appear here.
-    </p>
 
-    <a href="{{ url_for('auth.logout') }}">
-        Logout
-    </a>
+    <!-- ============================= -->
+    <!-- FINANCIAL SUMMARY -->
+    <!-- ============================= -->
+
+    <section>
+
+        <h2>Financial Overview</h2>
+
+        <div>
+
+            <div>
+                <h3>Total Income</h3>
+
+                <p>
+                    ₹{{ "%.2f"|format(summary.total_income|float) }}
+                </p>
+            </div>
+
+
+            <div>
+                <h3>Total Expenses</h3>
+
+                <p>
+                    ₹{{ "%.2f"|format(summary.total_expenses|float) }}
+                </p>
+            </div>
+
+
+            <div>
+                <h3>Balance</h3>
+
+                <p>
+                    ₹{{ "%.2f"|format(summary.balance|float) }}
+                </p>
+            </div>
+
+        </div>
+
+    </section>
+
+
+    <!-- ============================= -->
+    <!-- ADD TRANSACTION -->
+    <!-- ============================= -->
+
+    <section>
+
+        <h2>Add Transaction</h2>
+
+        <p>
+            <a href="{{ url_for('transaction.ai_add_transaction') }}">
+                Add Transaction with AI
+            </a>
+        </p>
+
+        <p>
+            <a href="{{ url_for('transaction.add_transaction') }}">
+                Add Transaction Manually
+            </a>
+        </p>
+
+    </section>
+
+
+    <!-- ============================= -->
+    <!-- RECENT TRANSACTIONS -->
+    <!-- ============================= -->
+
+    <section>
+
+        <h2>Recent Transactions</h2>
+
+        {% if summary.recent_transactions %}
+
+            <table>
+
+                <thead>
+
+                    <tr>
+                        <th>Date</th>
+                        <th>Description</th>
+                        <th>Category</th>
+                        <th>Type</th>
+                        <th>Amount</th>
+                    </tr>
+
+                </thead>
+
+
+                <tbody>
+
+                    {% for transaction in summary.recent_transactions %}
+
+                        <tr>
+
+                            <td>
+                                {{ transaction.transaction_date }}
+                            </td>
+
+                            <td>
+                                {{ transaction.description }}
+                            </td>
+
+                            <td>
+                                {{ transaction.category.name }}
+                            </td>
+
+                            <td>
+                                {{ transaction.entry_type.value }}
+                            </td>
+
+                            <td>
+                                ₹{{ "%.2f"|format(transaction.amount|float) }}
+                            </td>
+
+                        </tr>
+
+                    {% endfor %}
+
+                </tbody>
+
+            </table>
+
+        {% else %}
+
+            <p>
+                No transactions yet.
+            </p>
+
+        {% endif %}
+
+    </section>
+
+
+    <!-- ============================= -->
+    <!-- ACCOUNT -->
+    <!-- ============================= -->
+
+    <section>
+
+        <a href="{{ url_for('auth.logout') }}">
+            Logout
+        </a>
+
+    </section>
 
 </div>
 

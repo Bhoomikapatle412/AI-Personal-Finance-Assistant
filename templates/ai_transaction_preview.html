@@ -1,0 +1,112 @@
+{% extends "base.html" %}
+
+{% block content %}
+
+<div class="transaction-container">
+
+    <h1>Review Transaction</h1>
+
+    <p>
+        Gemini understood your transaction as:
+    </p>
+
+    <div>
+
+        <p>
+            <strong>Description:</strong>
+            {{ result.description }}
+        </p>
+
+        <p>
+            <strong>Amount:</strong>
+            ₹{{ result.amount }}
+        </p>
+
+        <p>
+            <strong>Category:</strong>
+            {{ category.name }}
+        </p>
+
+        <p>
+            <strong>Type:</strong>
+            {{ result.entry_type }}
+        </p>
+
+        <p>
+            <strong>Payment Method:</strong>
+            {{ payment_method.value }}
+        </p>
+
+        {% if transaction_date %}
+
+            <p>
+                <strong>Date:</strong>
+                {{ transaction_date }}
+            </p>
+
+        {% endif %}
+
+    </div>
+
+    <hr>
+
+    <p>
+        Is this information correct?
+    </p>
+
+    <form
+        method="POST"
+        action="{{ url_for('transaction.confirm_ai_transaction') }}"
+    >
+
+        <input
+            type="hidden"
+            name="description"
+            value="{{ result.description }}"
+        >
+
+        <input
+            type="hidden"
+            name="amount"
+            value="{{ result.amount }}"
+        >
+
+        <input
+            type="hidden"
+            name="category_id"
+            value="{{ category.id }}"
+        >
+
+        <input
+            type="hidden"
+            name="entry_type"
+            value="{{ result.entry_type }}"
+        >
+
+        <input
+            type="hidden"
+            name="payment_method"
+            value="{{ payment_method.value }}"
+        >
+
+        <input
+            type="hidden"
+            name="transaction_date"
+            value="{% if transaction_date %}{{ transaction_date }}{% endif %}"
+        >
+
+        <button type="submit">
+            Confirm & Add Transaction
+        </button>
+
+    </form>
+
+    <br>
+
+    <a href="{{ url_for('transaction.ai_add_transaction') }}">
+        Edit / Try Again
+    </a>
+
+</div>
+
+{% endblock %}

@@ -8,6 +8,7 @@ from models import *
 from routes.home import home_bp
 from routes.auth import auth_bp
 from routes.dashboard import dashboard_bp
+from routes.transaction import transaction_bp
 
 def create_app():
 
@@ -24,10 +25,10 @@ def create_app():
     login_manager.login_view = "auth.login"
 
     # Register blueprints
-    # Register blueprints
     app.register_blueprint(home_bp)
     app.register_blueprint(auth_bp)
     app.register_blueprint(dashboard_bp)
+    app.register_blueprint(transaction_bp)
 
     return app
 

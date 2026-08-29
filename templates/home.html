@@ -1,26 +1,135 @@
 {% extends "base.html" %}
 
-{% block title %}
-Home
-{% endblock %}
-
 {% block content %}
 
-<div class="text-center mt-5">
+<div class="home-container">
 
-<h1>AI Personal Finance Assistant</h1>
+    <section class="hero-section">
 
-<p class="lead">
+        <h1>AI Personal Finance Assistant</h1>
 
-Track your money effortlessly using AI.
+        <p>
+            Track your money effortlessly using AI.
+        </p>
 
-</p>
+        <p>
+            Simply describe your transaction naturally,
+            and let AI organize it for you.
+        </p>
 
-<a href="#" class="btn btn-primary">
+        <div class="hero-buttons">
 
-Get Started
+            <a
+                href="{{ url_for('auth.login') }}"
+                class="btn btn-primary"
+            >
+                Get Started
+            </a>
 
-</a>
+            <a
+                href="{{ url_for('auth.register') }}"
+                class="btn btn-secondary"
+            >
+                Create Account
+            </a>
+
+        </div>
+
+    </section>
+
+
+    <section class="features-section">
+
+        <h2>What You Can Do</h2>
+
+        <div class="features">
+
+            <div class="feature-card">
+
+                <h3>AI-Powered Transactions</h3>
+
+                <p>
+                    Enter transactions naturally, such as
+                    "dosa 60" or "Myntra shopping 421".
+                    Gemini automatically understands and
+                    categorizes them.
+                </p>
+
+            </div>
+
+
+            <div class="feature-card">
+
+                <h3>Smart Categorization</h3>
+
+                <p>
+                    Expenses such as dosa, chips, biryani
+                    and Swiggy orders can automatically be
+                    organized under Food.
+                </p>
+
+            </div>
+
+
+            <div class="feature-card">
+
+                <h3>Track Your Spending</h3>
+
+                <p>
+                    Keep your transactions organized in one
+                    place and understand where your money
+                    goes.
+                </p>
+
+            </div>
+
+        </div>
+
+    </section>
+
+
+    <section class="example-section">
+
+        <h2>How It Works</h2>
+
+        <div class="example-flow">
+
+            <p>
+                <strong>You enter:</strong>
+                dosa 60
+            </p>
+
+            <p>↓</p>
+
+            <p>
+                <strong>AI understands:</strong>
+                Food · ₹60 · Expense
+            </p>
+
+            <p>↓</p>
+
+            <p>
+                <strong>You confirm:</strong>
+                Transaction is added to your ledger.
+            </p>
+
+        </div>
+
+    </section>
+
+
+    <section class="cta-section">
+
+        <h2>Ready to take control of your finances?</h2>
+
+        <a
+            href="{{ url_for('auth.register') }}"
+            class="btn btn-primary"
+        >
+            Create Your Account
+        </a>
+
+    </section>
 
 </div>
 
