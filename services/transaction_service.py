@@ -4,7 +4,7 @@ from decimal import Decimal
 from sqlalchemy import func
 
 from extensions import db
-from models import Ledger
+from models import Ledger, Category
 from models.enums import EntryType
 
 
@@ -136,3 +136,70 @@ def get_dashboard_summary(user_id):
             user_id
         )
     }
+def get_category_expenses(user_id):
+    """
+    Calculate total expenses grouped by category.
+    Uses a single database query.
+    """
+
+    results = db.session.query(
+        Category.name,
+        func.sum(Ledger.amount)
+    ).join(
+        Category,
+        Ledger.category_id == Category.id
+    ).filter(
+        Ledger.user_id == user_id,
+        Ledger.entry_type == EntryType.EXPENSE
+    ).group_by(
+        Category.id,
+        Category.name
+    ).order_by(
+        func.sum(Ledger.amount).desc()
+    ).all()
+
+    return {
+        category_name: Decimal(str(total))
+        for category_name, total in results
+    }
+
+def get_monthly_income_expenses(user_id):
+    """
+    Calculate monthly income and expenses.
+    """
+
+    results = db.session.query(
+        Ledger.transaction_date,
+        Ledger.entry_type,
+        Ledger.amount
+    ).filter(
+        Ledger.user_id == user_id
+    ).order_by(
+        Ledger.transaction_date
+    ).all()
+
+    monthly_data = {}
+
+    for transaction_date, entry_type, amount in results:
+
+        month_key = transaction_date.strftime("%Y-%m")
+
+        if month_key not in monthly_data:
+            monthly_data[month_key] = {
+                "income": Decimal("0"),
+                "expenses": Decimal("0")
+            }
+
+        if entry_type == EntryType.INCOME:
+
+            monthly_data[month_key]["income"] += Decimal(
+                str(amount)
+            )
+
+        elif entry_type == EntryType.EXPENSE:
+
+            monthly_data[month_key]["expenses"] += Decimal(
+                str(amount)
+            )
+
+    return monthly_data

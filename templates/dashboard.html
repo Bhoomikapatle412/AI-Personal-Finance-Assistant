@@ -4,47 +4,67 @@
 
 <div class="dashboard-container">
 
-    <h1>Welcome, {{ user.full_name }}!</h1>
+    <!-- ========================================= -->
+    <!-- DASHBOARD HEADER -->
+    <!-- ========================================= -->
 
-    <p>
-        Here's an overview of your finances.
-    </p>
+    <section class="dashboard-header">
+
+        <h1>Welcome, {{ user.full_name }}!</h1>
+
+        <p>
+            Here's an overview of your finances.
+        </p>
+
+    </section>
 
 
-    <!-- ============================= -->
-    <!-- FINANCIAL SUMMARY -->
-    <!-- ============================= -->
+    <!-- ========================================= -->
+    <!-- FINANCIAL OVERVIEW -->
+    <!-- ========================================= -->
 
-    <section>
+    <section class="financial-overview">
 
         <h2>Financial Overview</h2>
 
-        <div>
+        <div class="summary-cards">
 
-            <div>
+            <!-- TOTAL INCOME -->
+
+            <div class="summary-card">
+
                 <h3>Total Income</h3>
 
                 <p>
                     ₹{{ "%.2f"|format(summary.total_income|float) }}
                 </p>
+
             </div>
 
 
-            <div>
+            <!-- TOTAL EXPENSES -->
+
+            <div class="summary-card">
+
                 <h3>Total Expenses</h3>
 
                 <p>
                     ₹{{ "%.2f"|format(summary.total_expenses|float) }}
                 </p>
+
             </div>
 
 
-            <div>
+            <!-- BALANCE -->
+
+            <div class="summary-card">
+
                 <h3>Balance</h3>
 
                 <p>
                     ₹{{ "%.2f"|format(summary.balance|float) }}
                 </p>
+
             </div>
 
         </div>
@@ -52,34 +72,195 @@
     </section>
 
 
-    <!-- ============================= -->
+    <!-- ========================================= -->
     <!-- ADD TRANSACTION -->
-    <!-- ============================= -->
+    <!-- ========================================= -->
 
-    <section>
+    <section class="transaction-actions">
 
         <h2>Add Transaction</h2>
 
-        <p>
-            <a href="{{ url_for('transaction.ai_add_transaction') }}">
-                Add Transaction with AI
-            </a>
-        </p>
+        <div>
 
-        <p>
-            <a href="{{ url_for('transaction.add_transaction') }}">
-                Add Transaction Manually
-            </a>
-        </p>
+            <p>
+
+                <a
+                    href="{{ url_for('transaction.ai_add_transaction') }}"
+                >
+                    Add Transaction with AI
+                </a>
+
+            </p>
+
+
+            <p>
+
+                <a
+                    href="{{ url_for('transaction.add_transaction') }}"
+                >
+                    Add Transaction Manually
+                </a>
+
+            </p>
+
+        </div>
 
     </section>
 
 
-    <!-- ============================= -->
-    <!-- RECENT TRANSACTIONS -->
-    <!-- ============================= -->
+    <!-- ========================================= -->
+    <!-- SPENDING BY CATEGORY -->
+    <!-- ========================================= -->
 
-    <section>
+    <section class="category-spending">
+
+        <h2>Spending by Category</h2>
+
+        {% if category_expenses %}
+
+            <!-- CATEGORY CHART -->
+
+            <div class="chart-container">
+
+                <canvas
+                    id="categoryExpenseChart"
+                ></canvas>
+
+            </div>
+
+
+            <!-- CATEGORY TABLE -->
+
+            <table>
+
+                <thead>
+
+                    <tr>
+
+                        <th>Category</th>
+
+                        <th>Total Spent</th>
+
+                    </tr>
+
+                </thead>
+
+
+                <tbody>
+
+                    {% for category, amount in category_expenses.items() %}
+
+                        <tr>
+
+                            <td>
+                                {{ category }}
+                            </td>
+
+                            <td>
+                                ₹{{ "%.2f"|format(amount|float) }}
+                            </td>
+
+                        </tr>
+
+                    {% endfor %}
+
+                </tbody>
+
+            </table>
+
+        {% else %}
+
+            <p>
+                No expenses recorded yet.
+            </p>
+
+        {% endif %}
+
+    </section>
+
+
+    <!-- ========================================= -->
+    <!-- MONTHLY INCOME VS EXPENSES -->
+    <!-- ========================================= -->
+
+    <section class="monthly-analytics">
+
+        <h2>Monthly Income vs Expenses</h2>
+
+        {% if monthly_data %}
+
+            <!-- MONTHLY CHART -->
+
+            <div class="chart-container">
+
+                <canvas
+                    id="monthlyIncomeExpenseChart"
+                ></canvas>
+
+            </div>
+
+
+            <!-- MONTHLY TABLE -->
+
+            <table>
+
+                <thead>
+
+                    <tr>
+
+                        <th>Month</th>
+
+                        <th>Income</th>
+
+                        <th>Expenses</th>
+
+                    </tr>
+
+                </thead>
+
+
+                <tbody>
+
+                    {% for month, data in monthly_data.items() %}
+
+                        <tr>
+
+                            <td>
+                                {{ month }}
+                            </td>
+
+                            <td>
+                                ₹{{ "%.2f"|format(data.income|float) }}
+                            </td>
+
+                            <td>
+                                ₹{{ "%.2f"|format(data.expenses|float) }}
+                            </td>
+
+                        </tr>
+
+                    {% endfor %}
+
+                </tbody>
+
+            </table>
+
+        {% else %}
+
+            <p>
+                No monthly transaction data available.
+            </p>
+
+        {% endif %}
+
+    </section>
+
+
+    <!-- ========================================= -->
+    <!-- RECENT TRANSACTIONS -->
+    <!-- ========================================= -->
+
+    <section class="recent-transactions">
 
         <h2>Recent Transactions</h2>
 
@@ -90,11 +271,17 @@
                 <thead>
 
                     <tr>
+
                         <th>Date</th>
+
                         <th>Description</th>
+
                         <th>Category</th>
+
                         <th>Type</th>
+
                         <th>Amount</th>
+
                     </tr>
 
                 </thead>
@@ -145,11 +332,11 @@
     </section>
 
 
-    <!-- ============================= -->
+    <!-- ========================================= -->
     <!-- ACCOUNT -->
-    <!-- ============================= -->
+    <!-- ========================================= -->
 
-    <section>
+    <section class="account-actions">
 
         <a href="{{ url_for('auth.logout') }}">
             Logout
@@ -158,5 +345,214 @@
     </section>
 
 </div>
+
+
+<!-- ========================================= -->
+<!-- CHART.JS -->
+<!-- ========================================= -->
+
+<script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+
+
+<!-- ========================================= -->
+<!-- CATEGORY CHART -->
+<!-- ========================================= -->
+
+{% if category_expenses %}
+
+<script>
+
+    const categoryLabels = [
+
+        {% for category in category_expenses.keys() %}
+
+            {{ category|tojson }}
+
+            {% if not loop.last %},{% endif %}
+
+        {% endfor %}
+
+    ];
+
+
+    const categoryAmounts = [
+
+        {% for amount in category_expenses.values() %}
+
+            {{ amount|float }}
+
+            {% if not loop.last %},{% endif %}
+
+        {% endfor %}
+
+    ];
+
+
+    const categoryCanvas = document.getElementById(
+        "categoryExpenseChart"
+    );
+
+
+    if (categoryCanvas) {
+
+        new Chart(
+            categoryCanvas,
+            {
+                type: "doughnut",
+
+                data: {
+
+                    labels: categoryLabels,
+
+                    datasets: [
+                        {
+                            label: "Spending",
+
+                            data: categoryAmounts
+                        }
+                    ]
+
+                },
+
+                options: {
+
+                    responsive: true,
+
+                    plugins: {
+
+                        legend: {
+                            position: "bottom"
+                        }
+
+                    }
+
+                }
+
+            }
+        );
+
+    }
+
+</script>
+
+{% endif %}
+
+
+<!-- ========================================= -->
+<!-- MONTHLY CHART -->
+<!-- ========================================= -->
+
+{% if monthly_data %}
+
+<script>
+
+    const monthlyLabels = [
+
+        {% for month in monthly_data.keys() %}
+
+            {{ month|tojson }}
+
+            {% if not loop.last %},{% endif %}
+
+        {% endfor %}
+
+    ];
+
+
+    const monthlyIncome = [
+
+        {% for data in monthly_data.values() %}
+
+            {{ data.income|float }}
+
+            {% if not loop.last %},{% endif %}
+
+        {% endfor %}
+
+    ];
+
+
+    const monthlyExpenses = [
+
+        {% for data in monthly_data.values() %}
+
+            {{ data.expenses|float }}
+
+            {% if not loop.last %},{% endif %}
+
+        {% endfor %}
+
+    ];
+
+
+    const monthlyCanvas = document.getElementById(
+        "monthlyIncomeExpenseChart"
+    );
+
+
+    if (monthlyCanvas) {
+
+        new Chart(
+            monthlyCanvas,
+            {
+                type: "bar",
+
+                data: {
+
+                    labels: monthlyLabels,
+
+                    datasets: [
+
+                        {
+                            label: "Income",
+
+                            data: monthlyIncome
+                        },
+
+                        {
+                            label: "Expenses",
+
+                            data: monthlyExpenses
+                        }
+
+                    ]
+
+                },
+
+                options: {
+
+                    responsive: true,
+
+                    scales: {
+
+                        y: {
+
+                            beginAtZero: true
+
+                        }
+
+                    },
+
+                    plugins: {
+
+                        legend: {
+
+                            position: "bottom"
+
+                        }
+
+                    }
+
+                }
+
+            }
+
+        );
+
+    }
+
+</script>
+
+{% endif %}
 
 {% endblock %}
