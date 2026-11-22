@@ -1,558 +1,307 @@
+
 {% extends "base.html" %}
 
 {% block content %}
 
 <div class="dashboard-container">
 
-    <!-- ========================================= -->
     <!-- DASHBOARD HEADER -->
-    <!-- ========================================= -->
-
     <section class="dashboard-header">
-
         <h1>Welcome, {{ user.full_name }}!</h1>
-
-        <p>
-            Here's an overview of your finances.
-        </p>
-
+        <p>Here's an overview of your finances.</p>
     </section>
 
 
-    <!-- ========================================= -->
-    <!-- FINANCIAL OVERVIEW -->
-    <!-- ========================================= -->
-
+    <!-- LIFETIME FINANCIAL OVERVIEW -->
     <section class="financial-overview">
-
         <h2>Financial Overview</h2>
 
         <div class="summary-cards">
-
-            <!-- TOTAL INCOME -->
-
             <div class="summary-card">
-
                 <h3>Total Income</h3>
-
-                <p>
-                    ₹{{ "%.2f"|format(summary.total_income|float) }}
-                </p>
-
+                <p>₹{{ "%.2f"|format(summary.total_income|float) }}</p>
             </div>
 
-
-            <!-- TOTAL EXPENSES -->
-
             <div class="summary-card">
-
                 <h3>Total Expenses</h3>
-
-                <p>
-                    ₹{{ "%.2f"|format(summary.total_expenses|float) }}
-                </p>
-
+                <p>₹{{ "%.2f"|format(summary.total_expenses|float) }}</p>
             </div>
-
-
-            <!-- BALANCE -->
 
             <div class="summary-card">
-
                 <h3>Balance</h3>
-
-                <p>
-                    ₹{{ "%.2f"|format(summary.balance|float) }}
-                </p>
-
+                <p>₹{{ "%.2f"|format(summary.balance|float) }}</p>
             </div>
-
         </div>
-
     </section>
 
 
-    <!-- ========================================= -->
-    <!-- ADD TRANSACTION -->
-    <!-- ========================================= -->
+    <!-- CURRENT MONTH OVERVIEW -->
+    <section class="monthly-overview">
+        <h2>Monthly Overview</h2>
 
+        <div class="summary-cards">
+            <div class="summary-card">
+                <h3>Monthly Income</h3>
+                <p>₹{{ "%.2f"|format(current_month_metrics.income|float) }}</p>
+            </div>
+
+            <div class="summary-card">
+                <h3>Monthly Expenses</h3>
+                <p>₹{{ "%.2f"|format(current_month_metrics.expenses|float) }}</p>
+            </div>
+
+            <div class="summary-card">
+                <h3>Monthly Savings</h3>
+                <p>₹{{ "%.2f"|format(current_month_metrics.savings|float) }}</p>
+            </div>
+
+            <div class="summary-card">
+                <h3>Savings Rate</h3>
+                <p>{{ "%.2f"|format(current_month_metrics.savings_rate|float) }}%</p>
+            </div>
+        </div>
+    </section>
+
+
+    <!-- MONTH-OVER-MONTH COMPARISON -->
+    <section class="month-comparison">
+        <h2>Month-over-Month Comparison</h2>
+
+        <div class="summary-cards">
+
+            <div class="summary-card">
+                <h3>Income Comparison</h3>
+                <p>This Month: ₹{{ "%.2f"|format(month_comparison.current_income|float) }}</p>
+                <p>Last Month: ₹{{ "%.2f"|format(month_comparison.previous_income|float) }}</p>
+                <p>Change: {{ "%.2f"|format(month_comparison.income_change|float) }}%</p>
+            </div>
+
+            <div class="summary-card">
+                <h3>Expense Comparison</h3>
+                <p>This Month: ₹{{ "%.2f"|format(month_comparison.current_expenses|float) }}</p>
+                <p>Last Month: ₹{{ "%.2f"|format(month_comparison.previous_expenses|float) }}</p>
+                <p>Change: {{ "%.2f"|format(month_comparison.expense_change|float) }}%</p>
+            </div>
+
+        </div>
+    </section>
+
+
+    <!-- TRANSACTION ACTIONS -->
     <section class="transaction-actions">
-
         <h2>Add Transaction</h2>
 
-        <div>
+        <p>
+            <a href="{{ url_for('transaction.ai_add_transaction') }}">
+                Add Transaction with AI
+            </a>
+        </p>
 
-            <p>
+        <p>
+            <a href="{{ url_for('transaction.add_transaction') }}">
+                Add Transaction Manually
+            </a>
+        </p>
 
-                <a
-                    href="{{ url_for('transaction.ai_add_transaction') }}"
-                >
-                    Add Transaction with AI
-                </a>
-
-            </p>
-
-
-            <p>
-
-                <a
-                    href="{{ url_for('transaction.add_transaction') }}"
-                >
-                    Add Transaction Manually
-                </a>
-
-            </p>
-
-        </div>
-
+        <p>
+            <a href="{{ url_for('transactions.transactions') }}">
+                View All Transactions
+            </a>
+        </p>
     </section>
 
 
-    <!-- ========================================= -->
     <!-- SPENDING BY CATEGORY -->
-    <!-- ========================================= -->
-
     <section class="category-spending">
-
         <h2>Spending by Category</h2>
 
         {% if category_expenses %}
 
-            <!-- CATEGORY CHART -->
-
             <div class="chart-container">
-
-                <canvas
-                    id="categoryExpenseChart"
-                ></canvas>
-
+                <canvas id="categoryExpenseChart"></canvas>
             </div>
 
-
-            <!-- CATEGORY TABLE -->
-
             <table>
-
                 <thead>
-
                     <tr>
-
                         <th>Category</th>
-
                         <th>Total Spent</th>
-
                     </tr>
-
                 </thead>
 
-
                 <tbody>
-
                     {% for category, amount in category_expenses.items() %}
-
-                        <tr>
-
-                            <td>
-                                {{ category }}
-                            </td>
-
-                            <td>
-                                ₹{{ "%.2f"|format(amount|float) }}
-                            </td>
-
-                        </tr>
-
+                    <tr>
+                        <td>{{ category }}</td>
+                        <td>₹{{ "%.2f"|format(amount|float) }}</td>
+                    </tr>
                     {% endfor %}
-
                 </tbody>
-
             </table>
 
         {% else %}
-
-            <p>
-                No expenses recorded yet.
-            </p>
-
+            <p>No expenses recorded yet.</p>
         {% endif %}
-
     </section>
 
 
-    <!-- ========================================= -->
     <!-- MONTHLY INCOME VS EXPENSES -->
-    <!-- ========================================= -->
-
     <section class="monthly-analytics">
-
         <h2>Monthly Income vs Expenses</h2>
 
         {% if monthly_data %}
 
-            <!-- MONTHLY CHART -->
-
             <div class="chart-container">
-
-                <canvas
-                    id="monthlyIncomeExpenseChart"
-                ></canvas>
-
+                <canvas id="monthlyIncomeExpenseChart"></canvas>
             </div>
 
-
-            <!-- MONTHLY TABLE -->
-
             <table>
-
                 <thead>
-
                     <tr>
-
                         <th>Month</th>
-
                         <th>Income</th>
-
                         <th>Expenses</th>
-
                     </tr>
-
                 </thead>
 
-
                 <tbody>
-
                     {% for month, data in monthly_data.items() %}
-
-                        <tr>
-
-                            <td>
-                                {{ month }}
-                            </td>
-
-                            <td>
-                                ₹{{ "%.2f"|format(data.income|float) }}
-                            </td>
-
-                            <td>
-                                ₹{{ "%.2f"|format(data.expenses|float) }}
-                            </td>
-
-                        </tr>
-
+                    <tr>
+                        <td>{{ month }}</td>
+                        <td>₹{{ "%.2f"|format(data.income|float) }}</td>
+                        <td>₹{{ "%.2f"|format(data.expenses|float) }}</td>
+                    </tr>
                     {% endfor %}
-
                 </tbody>
-
             </table>
 
         {% else %}
-
-            <p>
-                No monthly transaction data available.
-            </p>
-
+            <p>No monthly transaction data available.</p>
         {% endif %}
-
     </section>
 
 
-    <!-- ========================================= -->
     <!-- RECENT TRANSACTIONS -->
-    <!-- ========================================= -->
-
     <section class="recent-transactions">
-
         <h2>Recent Transactions</h2>
 
         {% if summary.recent_transactions %}
 
             <table>
-
                 <thead>
-
                     <tr>
-
                         <th>Date</th>
-
                         <th>Description</th>
-
                         <th>Category</th>
-
                         <th>Type</th>
-
                         <th>Amount</th>
-
                     </tr>
-
                 </thead>
 
-
                 <tbody>
-
                     {% for transaction in summary.recent_transactions %}
-
-                        <tr>
-
-                            <td>
-                                {{ transaction.transaction_date }}
-                            </td>
-
-                            <td>
-                                {{ transaction.description }}
-                            </td>
-
-                            <td>
-                                {{ transaction.category.name }}
-                            </td>
-
-                            <td>
-                                {{ transaction.entry_type.value }}
-                            </td>
-
-                            <td>
-                                ₹{{ "%.2f"|format(transaction.amount|float) }}
-                            </td>
-
-                        </tr>
-
+                    <tr>
+                        <td>{{ transaction.transaction_date }}</td>
+                        <td>{{ transaction.description }}</td>
+                        <td>{{ transaction.category.name }}</td>
+                        <td>{{ transaction.entry_type.value }}</td>
+                        <td>₹{{ "%.2f"|format(transaction.amount|float) }}</td>
+                    </tr>
                     {% endfor %}
-
                 </tbody>
-
             </table>
 
         {% else %}
-
-            <p>
-                No transactions yet.
-            </p>
-
+            <p>No transactions yet.</p>
         {% endif %}
-
     </section>
 
 
-    <!-- ========================================= -->
     <!-- ACCOUNT -->
-    <!-- ========================================= -->
-
     <section class="account-actions">
-
-        <a href="{{ url_for('auth.logout') }}">
-            Logout
-        </a>
-
+        <a href="{{ url_for('auth.logout') }}">Logout</a>
     </section>
 
 </div>
 
 
-<!-- ========================================= -->
 <!-- CHART.JS -->
-<!-- ========================================= -->
-
 <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
 
 
-<!-- ========================================= -->
 <!-- CATEGORY CHART -->
-<!-- ========================================= -->
-
 {% if category_expenses %}
-
 <script>
+    const categoryLabels = {{ category_expenses.keys()|list|tojson }};
+    const categoryAmounts = {{ category_expenses.values()|map('float')|list|tojson }};
 
-    const categoryLabels = [
-
-        {% for category in category_expenses.keys() %}
-
-            {{ category|tojson }}
-
-            {% if not loop.last %},{% endif %}
-
-        {% endfor %}
-
-    ];
-
-
-    const categoryAmounts = [
-
-        {% for amount in category_expenses.values() %}
-
-            {{ amount|float }}
-
-            {% if not loop.last %},{% endif %}
-
-        {% endfor %}
-
-    ];
-
-
-    const categoryCanvas = document.getElementById(
-        "categoryExpenseChart"
-    );
-
+    const categoryCanvas = document.getElementById("categoryExpenseChart");
 
     if (categoryCanvas) {
-
-        new Chart(
-            categoryCanvas,
-            {
-                type: "doughnut",
-
-                data: {
-
-                    labels: categoryLabels,
-
-                    datasets: [
-                        {
-                            label: "Spending",
-
-                            data: categoryAmounts
-                        }
-                    ]
-
-                },
-
-                options: {
-
-                    responsive: true,
-
-                    plugins: {
-
-                        legend: {
-                            position: "bottom"
-                        }
-
+        new Chart(categoryCanvas, {
+            type: "doughnut",
+            data: {
+                labels: categoryLabels,
+                datasets: [{
+                    label: "Spending",
+                    data: categoryAmounts
+                }]
+            },
+            options: {
+                responsive: true,
+                plugins: {
+                    legend: {
+                        position: "bottom"
                     }
-
                 }
-
             }
-        );
-
+        });
     }
-
 </script>
-
 {% endif %}
 
 
-<!-- ========================================= -->
-<!-- MONTHLY CHART -->
-<!-- ========================================= -->
-
+<!-- MONTHLY INCOME VS EXPENSE CHART -->
 {% if monthly_data %}
-
 <script>
+    const monthlyLabels = {{ monthly_data.keys()|list|tojson }};
+    const monthlyIncome = {{ monthly_data.values()|map(attribute='income')|map('float')|list|tojson }};
+    const monthlyExpenses = {{ monthly_data.values()|map(attribute='expenses')|map('float')|list|tojson }};
 
-    const monthlyLabels = [
-
-        {% for month in monthly_data.keys() %}
-
-            {{ month|tojson }}
-
-            {% if not loop.last %},{% endif %}
-
-        {% endfor %}
-
-    ];
-
-
-    const monthlyIncome = [
-
-        {% for data in monthly_data.values() %}
-
-            {{ data.income|float }}
-
-            {% if not loop.last %},{% endif %}
-
-        {% endfor %}
-
-    ];
-
-
-    const monthlyExpenses = [
-
-        {% for data in monthly_data.values() %}
-
-            {{ data.expenses|float }}
-
-            {% if not loop.last %},{% endif %}
-
-        {% endfor %}
-
-    ];
-
-
-    const monthlyCanvas = document.getElementById(
-        "monthlyIncomeExpenseChart"
-    );
-
+    const monthlyCanvas = document.getElementById("monthlyIncomeExpenseChart");
 
     if (monthlyCanvas) {
-
-        new Chart(
-            monthlyCanvas,
-            {
-                type: "bar",
-
-                data: {
-
-                    labels: monthlyLabels,
-
-                    datasets: [
-
-                        {
-                            label: "Income",
-
-                            data: monthlyIncome
-                        },
-
-                        {
-                            label: "Expenses",
-
-                            data: monthlyExpenses
-                        }
-
-                    ]
-
-                },
-
-                options: {
-
-                    responsive: true,
-
-                    scales: {
-
-                        y: {
-
-                            beginAtZero: true
-
-                        }
-
+        new Chart(monthlyCanvas, {
+            type: "bar",
+            data: {
+                labels: monthlyLabels,
+                datasets: [
+                    {
+                        label: "Income",
+                        data: monthlyIncome
                     },
-
-                    plugins: {
-
-                        legend: {
-
-                            position: "bottom"
-
-                        }
-
+                    {
+                        label: "Expenses",
+                        data: monthlyExpenses
                     }
-
+                ]
+            },
+            options: {
+                responsive: true,
+                scales: {
+                    y: {
+                        beginAtZero: true
+                    }
+                },
+                plugins: {
+                    legend: {
+                        position: "bottom"
+                    }
                 }
-
             }
-
-        );
-
+        });
     }
-
 </script>
-
 {% endif %}
 
 {% endblock %}
