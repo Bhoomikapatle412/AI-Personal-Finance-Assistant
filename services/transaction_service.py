@@ -490,3 +490,84 @@ def search_transactions(
         )
         .all()
     )
+def get_financial_insights(user_id):
+    """
+    Generate rule-based financial insights from user transaction data.
+    """
+    insights = []
+
+    monthly_metrics = get_current_month_metrics(user_id)
+    comparison = get_month_over_month_comparison(user_id)
+    category_expenses = get_category_expenses(user_id)
+
+    income = float(monthly_metrics.get("income", 0))
+    expenses = float(monthly_metrics.get("expenses", 0))
+    savings = float(monthly_metrics.get("savings", 0))
+    savings_rate = float(monthly_metrics.get("savings_rate", 0))
+
+    # Spending insight
+    if expenses > income and income > 0:
+        insights.append({
+            "type": "warning",
+            "title": "Spending exceeds income",
+            "message": "Your expenses are higher than your income this month."
+        })
+
+    elif income > 0 and expenses < income:
+        insights.append({
+            "type": "success",
+            "title": "You're saving money",
+            "message": f"You saved ₹{savings:.2f} this month."
+        })
+
+    # Savings rate insight
+    if income > 0:
+        if savings_rate >= 30:
+            insights.append({
+                "type": "success",
+                "title": "Excellent savings rate",
+                "message": f"You saved {savings_rate:.1f}% of your income this month."
+            })
+        elif savings_rate > 0:
+            insights.append({
+                "type": "info",
+                "title": "Savings opportunity",
+                "message": "Consider increasing your savings this month."
+            })
+
+    # Month-over-month expense comparison
+    expense_change = float(comparison.get("expense_change", 0))
+
+    if expense_change > 10:
+        insights.append({
+            "type": "warning",
+            "title": "Expenses increased",
+            "message": f"Your expenses increased by {expense_change:.1f}% compared to last month."
+        })
+
+    elif expense_change < -10:
+        insights.append({
+            "type": "success",
+            "title": "Expenses decreased",
+            "message": f"Your expenses decreased by {abs(expense_change):.1f}% compared to last month."
+        })
+
+    # Highest spending category
+    if category_expenses:
+        highest_category = max(category_expenses.items(), key=lambda item: item[1])
+
+        insights.append({
+            "type": "info",
+            "title": "Top spending category",
+            "message": f"{highest_category[0]} is your highest spending category."
+        })
+
+    # No transaction data
+    if income == 0 and expenses == 0:
+        insights.append({
+            "type": "info",
+            "title": "Start tracking your finances",
+            "message": "Add transactions to receive personalized financial insights."
+        })
+
+    return insights

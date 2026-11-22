@@ -1,4 +1,3 @@
-
 {% extends "base.html" %}
 
 {% block content %}
@@ -71,19 +70,64 @@
 
             <div class="summary-card">
                 <h3>Income Comparison</h3>
-                <p>This Month: ₹{{ "%.2f"|format(month_comparison.current_income|float) }}</p>
-                <p>Last Month: ₹{{ "%.2f"|format(month_comparison.previous_income|float) }}</p>
-                <p>Change: {{ "%.2f"|format(month_comparison.income_change|float) }}%</p>
+
+                <p>
+                    This Month:
+                    ₹{{ "%.2f"|format(month_comparison.current_income|float) }}
+                </p>
+
+                <p>
+                    Last Month:
+                    ₹{{ "%.2f"|format(month_comparison.previous_income|float) }}
+                </p>
+
+                <p>
+                    Change:
+                    {{ "%.2f"|format(month_comparison.income_change|float) }}%
+                </p>
             </div>
 
             <div class="summary-card">
                 <h3>Expense Comparison</h3>
-                <p>This Month: ₹{{ "%.2f"|format(month_comparison.current_expenses|float) }}</p>
-                <p>Last Month: ₹{{ "%.2f"|format(month_comparison.previous_expenses|float) }}</p>
-                <p>Change: {{ "%.2f"|format(month_comparison.expense_change|float) }}%</p>
+
+                <p>
+                    This Month:
+                    ₹{{ "%.2f"|format(month_comparison.current_expenses|float) }}
+                </p>
+
+                <p>
+                    Last Month:
+                    ₹{{ "%.2f"|format(month_comparison.previous_expenses|float) }}
+                </p>
+
+                <p>
+                    Change:
+                    {{ "%.2f"|format(month_comparison.expense_change|float) }}%
+                </p>
             </div>
 
         </div>
+    </section>
+
+
+    <!-- FINANCIAL INSIGHTS -->
+    <section class="financial-insights">
+        <h2>Financial Insights</h2>
+
+        {% if financial_insights %}
+            <div class="summary-cards">
+
+                {% for insight in financial_insights %}
+                    <div class="summary-card">
+                        <h3>{{ insight.title }}</h3>
+                        <p>{{ insight.message }}</p>
+                    </div>
+                {% endfor %}
+
+            </div>
+        {% else %}
+            <p>No financial insights available yet.</p>
+        {% endif %}
     </section>
 
 
@@ -217,7 +261,7 @@
     </section>
 
 
-    <!-- ACCOUNT -->
+    <!-- ACCOUNT ACTIONS -->
     <section class="account-actions">
         <a href="{{ url_for('auth.logout') }}">Logout</a>
     </section>
@@ -229,7 +273,7 @@
 <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
 
 
-<!-- CATEGORY CHART -->
+<!-- CATEGORY EXPENSE CHART -->
 {% if category_expenses %}
 <script>
     const categoryLabels = {{ category_expenses.keys()|list|tojson }};
