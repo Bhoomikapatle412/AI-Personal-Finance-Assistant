@@ -2,61 +2,57 @@
 
 {% block content %}
 
-<div class="transaction-container">
+<div class="container">
 
-    <h1>Review Transaction</h1>
+    <h1>Transaction Preview</h1>
 
     <p>
-        Gemini understood your transaction as:
+        Please review the transaction understood by AI before saving it.
     </p>
-
-    <div>
-
-        <p>
-            <strong>Description:</strong>
-            {{ result.description }}
-        </p>
-
-        <p>
-            <strong>Amount:</strong>
-            ₹{{ result.amount }}
-        </p>
-
-        <p>
-            <strong>Category:</strong>
-            {{ category.name }}
-        </p>
-
-        <p>
-            <strong>Type:</strong>
-            {{ result.entry_type }}
-        </p>
-
-        <p>
-            <strong>Payment Method:</strong>
-            {{ payment_method.value }}
-        </p>
-
-        {% if transaction_date %}
-
-            <p>
-                <strong>Date:</strong>
-                {{ transaction_date }}
-            </p>
-
-        {% endif %}
-
-    </div>
 
     <hr>
 
+    <h3>Transaction Details</h3>
+
     <p>
-        Is this information correct?
+        <strong>Description:</strong>
+        {{ result.description }}
     </p>
+
+    <p>
+        <strong>Amount:</strong>
+        ₹{{ "%.2f"|format(result.amount|float) }}
+    </p>
+
+    <p>
+        <strong>Category:</strong>
+        {{ result.category }}
+    </p>
+
+    <p>
+        <strong>Type:</strong>
+        {{ result.entry_type }}
+    </p>
+
+    <p>
+        <strong>Payment Method:</strong>
+        {{ payment_method }}
+    </p>
+
+    {% if transaction_date %}
+
+        <p>
+            <strong>Date:</strong>
+            {{ transaction_date }}
+        </p>
+
+    {% endif %}
+
+    <hr>
 
     <form
         method="POST"
-        action="{{ url_for('transaction.confirm_ai_transaction') }}"
+        action="{{ url_for('transaction.ai_confirm_transaction') }}"
     >
 
         <input
@@ -73,8 +69,8 @@
 
         <input
             type="hidden"
-            name="category_id"
-            value="{{ category.id }}"
+            name="category"
+            value="{{ result.category }}"
         >
 
         <input
@@ -86,17 +82,17 @@
         <input
             type="hidden"
             name="payment_method"
-            value="{{ payment_method.value }}"
+            value="{{ payment_method }}"
         >
 
         <input
             type="hidden"
             name="transaction_date"
-            value="{% if transaction_date %}{{ transaction_date }}{% endif %}"
+            value="{{ transaction_date }}"
         >
 
         <button type="submit">
-            Confirm & Add Transaction
+            Confirm Transaction
         </button>
 
     </form>
@@ -104,7 +100,7 @@
     <br>
 
     <a href="{{ url_for('transaction.ai_add_transaction') }}">
-        Edit / Try Again
+        Cancel
     </a>
 
 </div>

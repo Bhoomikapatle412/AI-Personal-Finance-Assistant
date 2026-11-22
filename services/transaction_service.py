@@ -6,6 +6,7 @@ from sqlalchemy import func, or_
 
 from extensions import db
 from models import Ledger, Category
+from models.budget import Budget
 from models.enums import EntryType
 
 
@@ -25,7 +26,6 @@ def create_transaction(
     transaction_date=None,
     notes=None
 ):
-
     if transaction_date is None:
         transaction_date = date.today()
 
@@ -43,14 +43,11 @@ def create_transaction(
     )
 
     try:
-
         db.session.add(transaction)
         db.session.commit()
-
         return transaction
 
     except Exception:
-
         db.session.rollback()
         raise
 
@@ -63,10 +60,7 @@ def get_dashboard_summary(user_id):
 
     total_income = (
         db.session.query(
-            func.coalesce(
-                func.sum(Ledger.amount),
-                0
-            )
+            func.coalesce(func.sum(Ledger.amount), 0)
         )
         .filter(
             Ledger.user_id == user_id,
@@ -77,10 +71,7 @@ def get_dashboard_summary(user_id):
 
     total_expenses = (
         db.session.query(
-            func.coalesce(
-                func.sum(Ledger.amount),
-                0
-            )
+            func.coalesce(func.sum(Ledger.amount), 0)
         )
         .filter(
             Ledger.user_id == user_id,
@@ -96,9 +87,7 @@ def get_dashboard_summary(user_id):
 
     recent_transactions = (
         Ledger.query
-        .filter(
-            Ledger.user_id == user_id
-        )
+        .filter(Ledger.user_id == user_id)
         .order_by(
             Ledger.transaction_date.desc(),
             Ledger.id.desc()
@@ -122,31 +111,16 @@ def get_dashboard_summary(user_id):
 def get_current_month_metrics(user_id):
 
     today = date.today()
-
     month_start = today.replace(day=1)
 
     if today.month == 12:
-
-        next_month_start = date(
-            today.year + 1,
-            1,
-            1
-        )
-
+        next_month_start = date(today.year + 1, 1, 1)
     else:
-
-        next_month_start = date(
-            today.year,
-            today.month + 1,
-            1
-        )
+        next_month_start = date(today.year, today.month + 1, 1)
 
     monthly_income = (
         db.session.query(
-            func.coalesce(
-                func.sum(Ledger.amount),
-                0
-            )
+            func.coalesce(func.sum(Ledger.amount), 0)
         )
         .filter(
             Ledger.user_id == user_id,
@@ -159,10 +133,7 @@ def get_current_month_metrics(user_id):
 
     monthly_expenses = (
         db.session.query(
-            func.coalesce(
-                func.sum(Ledger.amount),
-                0
-            )
+            func.coalesce(func.sum(Ledger.amount), 0)
         )
         .filter(
             Ledger.user_id == user_id,
@@ -179,13 +150,10 @@ def get_current_month_metrics(user_id):
     monthly_savings = monthly_income - monthly_expenses
 
     if monthly_income > 0:
-
         savings_rate = (
             monthly_savings / monthly_income
         ) * Decimal("100")
-
     else:
-
         savings_rate = Decimal("0")
 
     return {
@@ -194,6 +162,8 @@ def get_current_month_metrics(user_id):
         "savings": monthly_savings,
         "savings_rate": savings_rate
     }
+
+
 # ============================================================
 # MONTH-OVER-MONTH COMPARISON
 # ============================================================
@@ -201,25 +171,14 @@ def get_current_month_metrics(user_id):
 def get_month_over_month_comparison(user_id):
 
     today = date.today()
-
     current_month_start = today.replace(day=1)
 
     if today.month == 1:
-        previous_month_start = date(
-            today.year - 1,
-            12,
-            1
-        )
+        previous_month_start = date(today.year - 1, 12, 1)
     else:
-        previous_month_start = date(
-            today.year,
-            today.month - 1,
-            1
-        )
+        previous_month_start = date(today.year, today.month - 1, 1)
 
-    # ========================================================
     # CURRENT MONTH TOTALS
-    # ========================================================
 
     current_income = (
         db.session.query(
@@ -247,9 +206,7 @@ def get_month_over_month_comparison(user_id):
         .scalar()
     )
 
-    # ========================================================
     # PREVIOUS MONTH TOTALS
-    # ========================================================
 
     previous_month_end = current_month_start
 
@@ -285,41 +242,33 @@ def get_month_over_month_comparison(user_id):
     previous_income = Decimal(str(previous_income))
     previous_expenses = Decimal(str(previous_expenses))
 
-    # ========================================================
     # PERCENTAGE CHANGE
-    # ========================================================
 
     if previous_income > 0:
-
         income_change = (
             (current_income - previous_income)
             / previous_income
         ) * Decimal("100")
-
     else:
-
         income_change = Decimal("0")
 
     if previous_expenses > 0:
-
         expense_change = (
             (current_expenses - previous_expenses)
             / previous_expenses
         ) * Decimal("100")
-
     else:
-
         expense_change = Decimal("0")
 
     return {
         "current_income": current_income,
         "previous_income": previous_income,
         "income_change": income_change,
-
         "current_expenses": current_expenses,
         "previous_expenses": previous_expenses,
         "expense_change": expense_change
     }
+
 
 # ============================================================
 # CATEGORY-WISE EXPENSES
@@ -368,12 +317,8 @@ def get_monthly_income_expenses(user_id):
             Ledger.entry_type,
             Ledger.amount
         )
-        .filter(
-            Ledger.user_id == user_id
-        )
-        .order_by(
-            Ledger.transaction_date
-        )
+        .filter(Ledger.user_id == user_id)
+        .order_by(Ledger.transaction_date)
         .all()
     )
 
@@ -387,7 +332,6 @@ def get_monthly_income_expenses(user_id):
         month_key = transaction_date.strftime("%Y-%m")
 
         if month_key not in monthly_data:
-
             monthly_data[month_key] = {
                 "income": Decimal("0"),
                 "expenses": Decimal("0")
@@ -396,11 +340,9 @@ def get_monthly_income_expenses(user_id):
         amount = Decimal(str(amount))
 
         if entry_type == EntryType.INCOME:
-
             monthly_data[month_key]["income"] += amount
 
         elif entry_type == EntryType.EXPENSE:
-
             monthly_data[month_key]["expenses"] += amount
 
     return monthly_data
@@ -423,12 +365,9 @@ def search_transactions(
         Ledger.user_id == user_id
     )
 
-    # --------------------------------------------------------
     # SEARCH BY DESCRIPTION OR MERCHANT
-    # --------------------------------------------------------
 
     if search:
-
         search_term = f"%{search.strip()}%"
 
         query = query.filter(
@@ -438,49 +377,35 @@ def search_transactions(
             )
         )
 
-    # --------------------------------------------------------
     # FILTER BY CATEGORY
-    # --------------------------------------------------------
 
     if category_id is not None:
-
         query = query.filter(
             Ledger.category_id == category_id
         )
 
-    # --------------------------------------------------------
     # FILTER BY ENTRY TYPE
-    # --------------------------------------------------------
 
     if entry_type is not None:
-
         query = query.filter(
             Ledger.entry_type == entry_type
         )
 
-    # --------------------------------------------------------
     # FILTER BY START DATE
-    # --------------------------------------------------------
 
     if start_date is not None:
-
         query = query.filter(
             Ledger.transaction_date >= start_date
         )
 
-    # --------------------------------------------------------
     # FILTER BY END DATE
-    # --------------------------------------------------------
 
     if end_date is not None:
-
         query = query.filter(
             Ledger.transaction_date <= end_date
         )
 
-    # --------------------------------------------------------
     # RETURN FILTERED TRANSACTIONS
-    # --------------------------------------------------------
 
     return (
         query
@@ -490,10 +415,16 @@ def search_transactions(
         )
         .all()
     )
+
+
+# ============================================================
+# FINANCIAL INSIGHTS
+# ============================================================
+
 def get_financial_insights(user_id):
-    """
-    Generate rule-based financial insights from user transaction data.
-    """
+
+    """Generate rule-based financial insights from user transaction data."""
+
     insights = []
 
     monthly_metrics = get_current_month_metrics(user_id)
@@ -506,6 +437,7 @@ def get_financial_insights(user_id):
     savings_rate = float(monthly_metrics.get("savings_rate", 0))
 
     # Spending insight
+
     if expenses > income and income > 0:
         insights.append({
             "type": "warning",
@@ -521,6 +453,7 @@ def get_financial_insights(user_id):
         })
 
     # Savings rate insight
+
     if income > 0:
         if savings_rate >= 30:
             insights.append({
@@ -528,6 +461,7 @@ def get_financial_insights(user_id):
                 "title": "Excellent savings rate",
                 "message": f"You saved {savings_rate:.1f}% of your income this month."
             })
+
         elif savings_rate > 0:
             insights.append({
                 "type": "info",
@@ -536,6 +470,7 @@ def get_financial_insights(user_id):
             })
 
     # Month-over-month expense comparison
+
     expense_change = float(comparison.get("expense_change", 0))
 
     if expense_change > 10:
@@ -553,8 +488,12 @@ def get_financial_insights(user_id):
         })
 
     # Highest spending category
+
     if category_expenses:
-        highest_category = max(category_expenses.items(), key=lambda item: item[1])
+        highest_category = max(
+            category_expenses.items(),
+            key=lambda item: item[1]
+        )
 
         insights.append({
             "type": "info",
@@ -563,6 +502,7 @@ def get_financial_insights(user_id):
         })
 
     # No transaction data
+
     if income == 0 and expenses == 0:
         insights.append({
             "type": "info",
@@ -571,3 +511,95 @@ def get_financial_insights(user_id):
         })
 
     return insights
+
+
+# ============================================================
+# BUDGET MANAGEMENT
+# ============================================================
+
+def create_budget(user_id, category_id, amount, month, year):
+
+    """Create or update a monthly category budget."""
+
+    amount = Decimal(str(amount))
+
+    existing_budget = Budget.query.filter_by(
+        user_id=user_id,
+        category_id=category_id,
+        month=month,
+        year=year
+    ).first()
+
+    if existing_budget:
+        existing_budget.amount = amount
+    else:
+        existing_budget = Budget(
+            user_id=user_id,
+            category_id=category_id,
+            amount=amount,
+            month=month,
+            year=year
+        )
+        db.session.add(existing_budget)
+
+    try:
+        db.session.commit()
+        return existing_budget
+
+    except Exception:
+        db.session.rollback()
+        raise
+
+
+def get_user_budgets(user_id, month, year):
+
+    """Retrieve budgets for a user for a specific month."""
+
+    return Budget.query.filter_by(
+        user_id=user_id,
+        month=month,
+        year=year
+    ).all()
+def get_budget_overview(user_id, month, year):
+    """Return budget spending, remaining amount, percentage, and status."""
+
+    budgets = Budget.query.filter_by(
+        user_id=user_id,
+        month=month,
+        year=year
+    ).all()
+
+    overview = []
+
+    for budget in budgets:
+        spent = db.session.query(
+            func.coalesce(func.sum(Ledger.amount), 0)
+        ).filter(
+            Ledger.user_id == user_id,
+            Ledger.category_id == budget.category_id,
+            Ledger.entry_type == EntryType.EXPENSE,
+            func.extract("month", Ledger.transaction_date) == month,
+            func.extract("year", Ledger.transaction_date) == year
+        ).scalar()
+
+        spent = Decimal(str(spent))
+        budget_amount = Decimal(str(budget.amount))
+        remaining = budget_amount - spent
+        percentage = float((spent / budget_amount) * 100) if budget_amount > 0 else 0
+
+        if spent >= budget_amount:
+            status = "exceeded"
+        elif percentage >= 80:
+            status = "warning"
+        else:
+            status = "within"
+
+        overview.append({
+            "budget": budget,
+            "spent": spent,
+            "remaining": remaining,
+            "percentage": round(percentage, 2),
+            "status": status
+        })
+
+    return overview

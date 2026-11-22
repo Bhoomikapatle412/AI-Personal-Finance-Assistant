@@ -10,6 +10,7 @@ class GeminiService:
     """Service responsible for understanding natural-language transactions."""
 
     def __init__(self):
+
         if not Config.GEMINI_API_KEY:
             raise ValueError(
                 "GEMINI_API_KEY is not configured."
@@ -29,57 +30,47 @@ class GeminiService:
         """
         Convert natural-language transaction text into
         structured transaction information.
-
-        Example:
-            "dosa 60"
-
-        Returns:
-            {
-                "description": "Dosa",
-                "amount": 60,
-                "category": "Food",
-                "entry_type": "Expense"
-            }
         """
+
+        if not categories:
+            raise ValueError(
+                "No categories were provided."
+            )
 
         category_list = ", ".join(categories)
 
         prompt = f"""
 You are an AI assistant for a personal finance application.
 
-Your task is to understand a user's transaction description
-and extract the relevant financial information.
+Understand the user's transaction and return structured
+financial information.
 
-The user may write transactions informally, for example:
+Examples:
 
 - dosa 60
 - chips 20
 - swiggy biryani 250
 - myntra shopping 421
 - recharge 30
-- payment to aadi 500 savings
+- salary 50000
+- pizza 240
 
-Available categories are:
+Available categories:
 
 {category_list}
 
-You MUST choose the category from the available categories.
+Rules:
 
-Do not create a new category.
-
-Classify the transaction as either:
-- Expense
-- Income
-
-Extract the amount as a number.
-
-If the amount is not present or cannot be determined,
-return 0.
-
-The description should contain a clean description of
-what the user spent or received money for.
+1. You MUST choose the category from the available categories.
+2. NEVER create a new category.
+3. Classify the transaction as either Expense or Income.
+4. Extract the amount as a number.
+5. If the amount cannot be determined, return 0.
+6. Return a clean transaction description.
+7. Do not include currency symbols in the amount.
 
 User transaction:
+
 {user_input}
 """
 
@@ -128,8 +119,7 @@ User transaction:
             contents=prompt,
             config=types.GenerateContentConfig(
                 response_mime_type="application/json",
-                response_schema=response_schema,
-                
+                response_schema=response_schema
             )
         )
 
@@ -138,9 +128,17 @@ User transaction:
                 "Gemini returned an empty response."
             )
 
-        result = json.loads(response.text)
+        try:
+            result = json.loads(response.text)
+
+        except json.JSONDecodeError as exc:
+
+            raise ValueError(
+                "Gemini returned invalid JSON."
+            ) from exc
 
         return result
+
     def validate_transaction_result(
         self,
         result,
@@ -161,26 +159,34 @@ User transaction:
         ]
 
         for field in required_fields:
+
             if field not in result:
                 raise ValueError(
                     f"Gemini response is missing: {field}"
                 )
 
-        # Validate description
-        if not isinstance(result["description"], str):
+        # Description
+        if not isinstance(
+            result["description"],
+            str
+        ):
             raise ValueError(
                 "Transaction description must be text."
             )
 
-        if not result["description"].strip():
+        description = result["description"].strip()
+
+        if not description:
             raise ValueError(
                 "Transaction description cannot be empty."
             )
 
-        # Validate amount
+        # Amount
         try:
             amount = float(result["amount"])
+
         except (TypeError, ValueError):
+
             raise ValueError(
                 "Transaction amount must be a number."
             )
@@ -190,24 +196,47 @@ User transaction:
                 "Transaction amount must be greater than zero."
             )
 
-        # Validate category
-        if result["category"] not in categories:
+        # Category
+        category = result["category"]
+
+        if not isinstance(category, str):
             raise ValueError(
-                f"Invalid category: {result['category']}"
+                "Transaction category must be text."
             )
 
-        # Validate entry type
-        if result["entry_type"] not in [
+        category = category.strip()
+
+        # Match category case-insensitively so that
+        # Gemini returning "food" doesn't fail when
+        # the database contains "Food".
+        matched_category = next(
+            (
+                item
+                for item in categories
+                if item.lower() == category.lower()
+            ),
+            None
+        )
+
+        if matched_category is None:
+            raise ValueError(
+                f"Invalid category: {category}"
+            )
+
+        # Entry type
+        entry_type = result["entry_type"]
+
+        if entry_type not in (
             "Expense",
             "Income"
-        ]:
+        ):
             raise ValueError(
-                f"Invalid entry type: {result['entry_type']}"
+                f"Invalid entry type: {entry_type}"
             )
 
         return {
-            "description": result["description"].strip(),
+            "description": description,
             "amount": amount,
-            "category": result["category"],
-            "entry_type": result["entry_type"]
+            "category": matched_category,
+            "entry_type": entry_type
         }

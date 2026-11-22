@@ -18,31 +18,43 @@ def register():
         email = request.form.get("email", "").strip().lower()
         password = request.form.get("password", "")
 
-        # Validate required fields
         if not full_name or not email or not password:
             flash("All fields are required.", "error")
             return render_template("register.html")
 
-        # Check whether email already exists
         existing_user = User.query.filter_by(email=email).first()
 
         if existing_user:
-            flash("An account with this email already exists.", "error")
+            flash(
+                "An account with this email already exists.",
+                "error"
+            )
             return render_template("register.html")
-
-        # Hash password before storing it
-        password_hash = generate_password_hash(password)
 
         user = User(
             full_name=full_name,
             email=email,
-            password_hash=password_hash
+            password_hash=generate_password_hash(password)
         )
 
-        db.session.add(user)
-        db.session.commit()
+        try:
+            db.session.add(user)
+            db.session.commit()
 
-        flash("Account created successfully. You can now log in.", "success")
+        except Exception:
+            db.session.rollback()
+
+            flash(
+                "Could not create your account. Please try again.",
+                "error"
+            )
+
+            return render_template("register.html")
+
+        flash(
+            "Account created successfully. You can now log in.",
+            "success"
+        )
 
         return redirect(url_for("auth.login"))
 
@@ -57,22 +69,29 @@ def login():
         email = request.form.get("email", "").strip().lower()
         password = request.form.get("password", "")
 
-        # Validate required fields
         if not email or not password:
-            flash("Email and password are required.", "error")
+            flash(
+                "Email and password are required.",
+                "error"
+            )
             return render_template("login.html")
 
-        # Find user
         user = User.query.filter_by(email=email).first()
 
-        # Check credentials
-        if user and check_password_hash(user.password_hash, password):
-
+        if user and check_password_hash(
+            user.password_hash,
+            password
+        ):
             login_user(user)
 
-            return redirect(url_for("dashboard.dashboard"))
+            return redirect(
+                url_for("dashboard.dashboard")
+            )
 
-        flash("Invalid email or password.", "error")
+        flash(
+            "Invalid email or password.",
+            "error"
+        )
 
     return render_template("login.html")
 
@@ -83,6 +102,11 @@ def logout():
 
     logout_user()
 
-    flash("You have been logged out.", "success")
+    flash(
+        "You have been logged out.",
+        "success"
+    )
 
-    return redirect(url_for("home.home"))
+    return redirect(
+        url_for("home.home")
+    )

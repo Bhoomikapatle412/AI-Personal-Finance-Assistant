@@ -7,7 +7,10 @@ from .enums import EntryType, PaymentMethod
 class Ledger(db.Model):
     __tablename__ = "ledger"
 
-    id = db.Column(db.Integer, primary_key=True)
+    id = db.Column(
+        db.Integer,
+        primary_key=True
+    )
 
     user_id = db.Column(
         db.Integer,
@@ -72,7 +75,6 @@ class Ledger(db.Model):
         onupdate=datetime.utcnow
     )
 
-    # Relationships
     user = db.relationship(
         "User",
         back_populates="ledger_entries"

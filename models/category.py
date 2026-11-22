@@ -6,17 +6,30 @@ from extensions import db
 class Category(db.Model):
     __tablename__ = "categories"
 
-    id = db.Column(db.Integer, primary_key=True)
+    id = db.Column(
+        db.Integer,
+        primary_key=True
+    )
 
-    name = db.Column(db.String(50), nullable=False)
+    name = db.Column(
+        db.String(50),
+        nullable=False
+    )
 
-    icon = db.Column(db.String(50), nullable=False)
+    icon = db.Column(
+        db.String(50),
+        nullable=False
+    )
 
-    color = db.Column(db.String(20), nullable=False)
+    color = db.Column(
+        db.String(20),
+        nullable=False
+    )
 
     is_default = db.Column(
         db.Boolean,
-        default=True
+        default=True,
+        nullable=False
     )
 
     user_id = db.Column(
@@ -30,7 +43,6 @@ class Category(db.Model):
         default=datetime.utcnow
     )
 
-    # Relationships
     user = db.relationship(
         "User",
         back_populates="categories"

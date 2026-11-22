@@ -3,15 +3,16 @@ from flask import Flask
 from config import Config
 from extensions import db, login_manager, migrate
 
-from models import *
+from models import User, Category, Ledger
 
 from routes.home import home_bp
 from routes.auth import auth_bp
 from routes.dashboard import dashboard_bp
 from routes.transaction import transaction_bp
+from routes.transactions import transactions_bp
+from routes.budget import budget_bp
 
 def create_app():
-
     app = Flask(__name__)
 
     app.config.from_object(Config)
@@ -29,6 +30,8 @@ def create_app():
     app.register_blueprint(auth_bp)
     app.register_blueprint(dashboard_bp)
     app.register_blueprint(transaction_bp)
+    app.register_blueprint(transactions_bp)
+    app.register_blueprint(budget_bp)
 
     return app
 

@@ -2,41 +2,50 @@
 
 {% block content %}
 
-<div class="transaction-container">
+<div class="container">
 
     <h1>Add Transaction with AI</h1>
 
     <p>
-        Describe your transaction naturally.
+        Describe your transaction naturally and let AI organize it for you.
     </p>
 
-    <p>
-        Examples:
-        <br>
-        <strong>dosa 60</strong>
-        <br>
-        <strong>swiggy biryani 250</strong>
-        <br>
-        <strong>myntra shopping 421</strong>
-        <br>
-        <strong>recharge 30</strong>
-    </p>
+    <p><strong>Examples:</strong></p>
 
-    <form method="POST">
+    <ul>
+        <li>dosa 60</li>
+        <li>swiggy biryani 250</li>
+        <li>myntra shopping 421</li>
+        <li>recharge 30</li>
+        <li>pizza 240</li>
+        <li>salary 50000</li>
+    </ul>
+
+    <form
+        method="POST"
+        action="{{ url_for('transaction.ai_add_transaction') }}"
+    >
 
         <div>
+
             <label for="transaction_text">
-                What did you spend money on?
+                What was the transaction?
             </label>
+
+            <br>
 
             <textarea
                 id="transaction_text"
                 name="transaction_text"
-                rows="4"
-                placeholder="e.g. dosa 60"
+                rows="5"
+                cols="50"
+                placeholder="Example: pizza 240"
                 required
             ></textarea>
+
         </div>
+
+        <br>
 
         <div>
 
@@ -44,19 +53,22 @@
                 Payment Method
             </label>
 
+            <br>
+
             <select
                 id="payment_method"
                 name="payment_method"
                 required
             >
 
-                <option value="">
-                    Select payment method
-                </option>
-
                 {% for method in payment_methods %}
 
-                    <option value="{{ method.value }}">
+                    <option
+                        value="{{ method.value }}"
+                        {% if method == payment_methods.OTHER %}
+                            selected
+                        {% endif %}
+                    >
                         {{ method.value }}
                     </option>
 
@@ -66,11 +78,15 @@
 
         </div>
 
+        <br>
+
         <div>
 
             <label for="transaction_date">
                 Date
             </label>
+
+            <br>
 
             <input
                 type="date"
@@ -80,17 +96,19 @@
 
         </div>
 
+        <br>
+
         <button type="submit">
-            Understand with AI
+            Understand Transaction
         </button>
 
     </form>
 
-    <p>
-        <a href="{{ url_for('dashboard.dashboard') }}">
-            Back to Dashboard
-        </a>
-    </p>
+    <br>
+
+    <a href="{{ url_for('dashboard.dashboard') }}">
+        Back to Dashboard
+    </a>
 
 </div>
 

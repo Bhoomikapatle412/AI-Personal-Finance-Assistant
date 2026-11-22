@@ -25,25 +25,34 @@ transaction_bp = Blueprint(
 
 
 # ============================================================
-# HELPER
+# HELPERS
 # ============================================================
 
-def get_available_categories():
-    """
-    Get default categories and categories
-    created by the current user.
-    """
+def get_user_categories():
+    return (
+        Category.query
+        .filter(
+            (Category.is_default.is_(True)) |
+            (Category.user_id == current_user.id)
+        )
+        .order_by(Category.name)
+        .all()
+    )
 
-    return Category.query.filter(
-        (Category.is_default == True) |
-        (Category.user_id == current_user.id)
-    ).order_by(
-        Category.name
-    ).all()
+
+def render_manual_transaction_form():
+    categories = get_user_categories()
+
+    return render_template(
+        "add_transaction.html",
+        categories=categories,
+        entry_types=EntryType,
+        payment_methods=PaymentMethod
+    )
 
 
 # ============================================================
-# MANUAL TRANSACTION
+# MANUAL ADD TRANSACTION
 # ============================================================
 
 @transaction_bp.route(
@@ -53,46 +62,33 @@ def get_available_categories():
 @login_required
 def add_transaction():
 
-    categories = get_available_categories()
-
-    # --------------------------------------------------------
-    # GET
-    # --------------------------------------------------------
-
     if request.method == "GET":
-
-        return render_template(
-            "add_transaction.html",
-            categories=categories,
-            entry_types=EntryType,
-            payment_methods=PaymentMethod
-        )
-
-    # --------------------------------------------------------
-    # POST
-    # --------------------------------------------------------
+        return render_manual_transaction_form()
 
     description = request.form.get(
         "description",
         ""
     ).strip()
 
-    amount = request.form.get(
+    amount_value = request.form.get(
         "amount",
         ""
     ).strip()
 
-    category_id = request.form.get(
-        "category_id"
-    )
+    category_id_value = request.form.get(
+        "category_id",
+        ""
+    ).strip()
 
-    entry_type = request.form.get(
-        "entry_type"
-    )
+    entry_type_value = request.form.get(
+        "entry_type",
+        ""
+    ).strip()
 
-    payment_method = request.form.get(
-        "payment_method"
-    )
+    payment_method_value = request.form.get(
+        "payment_method",
+        ""
+    ).strip()
 
     merchant = request.form.get(
         "merchant",
@@ -104,23 +100,25 @@ def add_transaction():
         ""
     ).strip()
 
-    transaction_date = request.form.get(
-        "transaction_date"
-    )
+    transaction_date_value = request.form.get(
+        "transaction_date",
+        ""
+    ).strip()
 
     notes = request.form.get(
         "notes",
         ""
     ).strip()
 
+    categories = get_user_categories()
+
     # --------------------------------------------------------
-    # Required fields
+    # Description / amount
     # --------------------------------------------------------
 
-    if not description or not amount or not category_id:
-
+    if not description or not amount_value:
         flash(
-            "Please fill in all required fields.",
+            "Description and amount are required.",
             "error"
         )
 
@@ -131,32 +129,16 @@ def add_transaction():
             payment_methods=PaymentMethod
         )
 
-    # --------------------------------------------------------
-    # Amount
-    # --------------------------------------------------------
-
     try:
+        amount = float(amount_value)
 
-        amount = float(amount)
+        if amount <= 0:
+            raise ValueError
 
-    except ValueError:
+    except (ValueError, TypeError):
 
         flash(
             "Please enter a valid amount.",
-            "error"
-        )
-
-        return render_template(
-            "add_transaction.html",
-            categories=categories,
-            entry_types=EntryType,
-            payment_methods=PaymentMethod
-        )
-
-    if amount <= 0:
-
-        flash(
-            "Amount must be greater than zero.",
             "error"
         )
 
@@ -172,13 +154,12 @@ def add_transaction():
     # --------------------------------------------------------
 
     try:
+        category_id = int(category_id_value)
 
-        category_id = int(category_id)
-
-    except ValueError:
+    except (ValueError, TypeError):
 
         flash(
-            "Invalid category.",
+            "Please select a valid category.",
             "error"
         )
 
@@ -192,7 +173,7 @@ def add_transaction():
     category = Category.query.filter(
         Category.id == category_id,
         (
-            (Category.is_default == True) |
+            Category.is_default.is_(True) |
             (Category.user_id == current_user.id)
         )
     ).first()
@@ -200,7 +181,7 @@ def add_transaction():
     if not category:
 
         flash(
-            "Invalid category.",
+            "Please select a valid category.",
             "error"
         )
 
@@ -212,23 +193,37 @@ def add_transaction():
         )
 
     # --------------------------------------------------------
-    # Enums
+    # Entry type
     # --------------------------------------------------------
 
     try:
+        entry_type = EntryType(entry_type_value)
 
-        selected_entry_type = EntryType(
-            entry_type
-        )
-
-        selected_payment_method = PaymentMethod(
-            payment_method
-        )
-
-    except ValueError:
+    except (ValueError, TypeError):
 
         flash(
-            "Invalid transaction type or payment method.",
+            "Please select a valid transaction type.",
+            "error"
+        )
+
+        return render_template(
+            "add_transaction.html",
+            categories=categories,
+            entry_types=EntryType,
+            payment_methods=PaymentMethod
+        )
+
+    # --------------------------------------------------------
+    # Payment method
+    # --------------------------------------------------------
+
+    try:
+        payment_method = PaymentMethod(payment_method_value)
+
+    except (ValueError, TypeError):
+
+        flash(
+            "Please select a valid payment method.",
             "error"
         )
 
@@ -245,19 +240,18 @@ def add_transaction():
 
     parsed_date = None
 
-    if transaction_date:
+    if transaction_date_value:
 
         try:
-
             parsed_date = datetime.strptime(
-                transaction_date,
+                transaction_date_value,
                 "%Y-%m-%d"
             ).date()
 
         except ValueError:
 
             flash(
-                "Invalid transaction date.",
+                "Please enter a valid date.",
                 "error"
             )
 
@@ -269,24 +263,42 @@ def add_transaction():
             )
 
     # --------------------------------------------------------
-    # Save transaction
+    # Create transaction
     # --------------------------------------------------------
 
-    create_transaction(
-        user_id=current_user.id,
-        category_id=category.id,
-        entry_type=selected_entry_type,
-        amount=amount,
-        description=description,
-        payment_method=selected_payment_method,
-        merchant=merchant or None,
-        payment_provider=payment_provider or None,
-        transaction_date=parsed_date,
-        notes=notes or None
-    )
+    try:
+
+        create_transaction(
+            user_id=current_user.id,
+            category_id=category.id,
+            entry_type=entry_type,
+            amount=amount,
+            description=description,
+            payment_method=payment_method,
+            merchant=merchant or None,
+            payment_provider=payment_provider or None,
+            transaction_date=parsed_date,
+            notes=notes or None
+        )
+
+    except Exception as exc:
+
+        print("Manual transaction error:", exc)
+
+        flash(
+            "Could not save the transaction.",
+            "error"
+        )
+
+        return render_template(
+            "add_transaction.html",
+            categories=categories,
+            entry_types=EntryType,
+            payment_methods=PaymentMethod
+        )
 
     flash(
-        "Transaction added successfully.",
+        "Transaction added successfully!",
         "success"
     )
 
@@ -296,7 +308,7 @@ def add_transaction():
 
 
 # ============================================================
-# AI TRANSACTION
+# AI ADD TRANSACTION
 # ============================================================
 
 @transaction_bp.route(
@@ -306,13 +318,6 @@ def add_transaction():
 @login_required
 def ai_add_transaction():
 
-    categories = get_available_categories()
-
-    # --------------------------------------------------------
-    # GET
-    # Show the AI transaction form
-    # --------------------------------------------------------
-
     if request.method == "GET":
 
         return render_template(
@@ -320,25 +325,23 @@ def ai_add_transaction():
             payment_methods=PaymentMethod
         )
 
-    # --------------------------------------------------------
-    # POST
-    # --------------------------------------------------------
-
     user_input = request.form.get(
         "transaction_text",
         ""
     ).strip()
 
-    payment_method = request.form.get(
-        "payment_method"
-    )
+    payment_method_value = request.form.get(
+        "payment_method",
+        ""
+    ).strip()
 
-    transaction_date = request.form.get(
-        "transaction_date"
-    )
+    transaction_date_value = request.form.get(
+        "transaction_date",
+        ""
+    ).strip()
 
     # --------------------------------------------------------
-    # Validate user input
+    # Validate input
     # --------------------------------------------------------
 
     if not user_input:
@@ -354,16 +357,19 @@ def ai_add_transaction():
         )
 
     # --------------------------------------------------------
-    # Validate payment method
+    # Payment method
     # --------------------------------------------------------
+
+    if not payment_method_value:
+        payment_method_value = PaymentMethod.OTHER.value
 
     try:
 
-        selected_payment_method = PaymentMethod(
-            payment_method
+        payment_method = PaymentMethod(
+            payment_method_value
         )
 
-    except ValueError:
+    except (ValueError, TypeError):
 
         flash(
             "Please select a valid payment method.",
@@ -376,85 +382,17 @@ def ai_add_transaction():
         )
 
     # --------------------------------------------------------
-    # Get categories from database
-    # --------------------------------------------------------
-
-    category_names = [
-        category.name
-        for category in categories
-    ]
-
-    # --------------------------------------------------------
-    # Gemini
-    # --------------------------------------------------------
-
-    try:
-
-        gemini = GeminiService()
-
-        result = gemini.classify_transaction(
-            user_input,
-            category_names
-        )
-
-        result = gemini.validate_transaction_result(
-            result,
-            category_names
-        )
-
-    except Exception as error:
-
-        print(
-            f"Gemini transaction error: {error}"
-        )
-
-        flash(
-            "Unable to understand the transaction. "
-            "Please try again.",
-            "error"
-        )
-
-        return render_template(
-            "ai_transaction.html",
-            payment_methods=PaymentMethod
-        )
-
-    # --------------------------------------------------------
-    # Find category in database
-    # --------------------------------------------------------
-
-    category = Category.query.filter(
-        Category.name == result["category"],
-        (
-            (Category.is_default == True) |
-            (Category.user_id == current_user.id)
-        )
-    ).first()
-
-    if not category:
-
-        flash(
-            "The AI selected an unavailable category.",
-            "error"
-        )
-
-        return render_template(
-            "ai_transaction.html",
-            payment_methods=PaymentMethod
-        )
-
-    # --------------------------------------------------------
-    # Parse date
+    # Date
     # --------------------------------------------------------
 
     parsed_date = None
 
-    if transaction_date:
+    if transaction_date_value:
 
         try:
 
             parsed_date = datetime.strptime(
-                transaction_date,
+                transaction_date_value,
                 "%Y-%m-%d"
             ).date()
 
@@ -471,24 +409,79 @@ def ai_add_transaction():
             )
 
     # --------------------------------------------------------
-    # IMPORTANT:
-    # Do NOT save the transaction yet.
-    #
-    # Show Gemini's result to the user first.
+    # Categories
+    # --------------------------------------------------------
+
+    categories = get_user_categories()
+
+    category_names = [
+        category.name
+        for category in categories
+    ]
+
+    if not category_names:
+
+        flash(
+            "No transaction categories are available.",
+            "error"
+        )
+
+        return render_template(
+            "ai_transaction.html",
+            payment_methods=PaymentMethod
+        )
+
+    # --------------------------------------------------------
+    # Gemini
+    # --------------------------------------------------------
+
+    try:
+
+        gemini = GeminiService()
+
+        result = gemini.classify_transaction(
+            user_input=user_input,
+            categories=category_names
+        )
+
+        result = gemini.validate_transaction_result(
+            result=result,
+            categories=category_names
+        )
+
+    except Exception as exc:
+
+        print("Gemini error:", exc)
+
+        flash(
+            "AI could not process the transaction. "
+            "Please try again.",
+            "error"
+        )
+
+        return render_template(
+            "ai_transaction.html",
+            payment_methods=PaymentMethod
+        )
+
+    # --------------------------------------------------------
+    # Preview
     # --------------------------------------------------------
 
     return render_template(
         "ai_transaction_preview.html",
         result=result,
-        category=category,
-        payment_method=selected_payment_method,
-        transaction_date=parsed_date,
-        original_text=user_input
+        payment_method=payment_method.value,
+        transaction_date=(
+            parsed_date.strftime("%Y-%m-%d")
+            if parsed_date
+            else ""
+        )
     )
 
 
 # ============================================================
-# CONFIRM AI TRANSACTION
+# AI CONFIRM TRANSACTION
 # ============================================================
 
 @transaction_bp.route(
@@ -496,45 +489,43 @@ def ai_add_transaction():
     methods=["POST"]
 )
 @login_required
-def confirm_ai_transaction():
+def ai_confirm_transaction():
 
     description = request.form.get(
         "description",
         ""
     ).strip()
 
-    amount = request.form.get(
+    amount_value = request.form.get(
         "amount",
         ""
     ).strip()
 
-    category_id = request.form.get(
-        "category_id"
-    )
+    category_name = request.form.get(
+        "category",
+        ""
+    ).strip()
 
-    entry_type = request.form.get(
-        "entry_type"
-    )
+    entry_type_value = request.form.get(
+        "entry_type",
+        ""
+    ).strip()
 
-    payment_method = request.form.get(
-        "payment_method"
-    )
+    payment_method_value = request.form.get(
+        "payment_method",
+        PaymentMethod.OTHER.value
+    ).strip()
 
-    transaction_date = request.form.get(
-        "transaction_date"
-    )
+    transaction_date_value = request.form.get(
+        "transaction_date",
+        ""
+    ).strip()
 
     # --------------------------------------------------------
-    # Required fields
+    # Basic validation
     # --------------------------------------------------------
 
-    if (
-        not description
-        or not amount
-        or not category_id
-        or not entry_type
-        or not payment_method
-    ):
+    if not description or not amount_value or not category_name:
 
         flash(
             "Transaction information is incomplete.",
@@ -542,9 +533,7 @@ def confirm_ai_transaction():
         )
 
         return redirect(
-            url_for(
-                "transaction.ai_add_transaction"
-            )
+            url_for("transaction.ai_add_transaction")
         )
 
     # --------------------------------------------------------
@@ -553,12 +542,12 @@ def confirm_ai_transaction():
 
     try:
 
-        amount = float(amount)
+        amount = float(amount_value)
 
         if amount <= 0:
             raise ValueError
 
-    except ValueError:
+    except (ValueError, TypeError):
 
         flash(
             "Invalid transaction amount.",
@@ -566,36 +555,17 @@ def confirm_ai_transaction():
         )
 
         return redirect(
-            url_for(
-                "transaction.ai_add_transaction"
-            )
+            url_for("transaction.ai_add_transaction")
         )
 
     # --------------------------------------------------------
     # Category
     # --------------------------------------------------------
 
-    try:
-
-        category_id = int(category_id)
-
-    except ValueError:
-
-        flash(
-            "Invalid category.",
-            "error"
-        )
-
-        return redirect(
-            url_for(
-                "transaction.ai_add_transaction"
-            )
-        )
-
     category = Category.query.filter(
-        Category.id == category_id,
+        Category.name.ilike(category_name),
         (
-            (Category.is_default == True) |
+            Category.is_default.is_(True) |
             (Category.user_id == current_user.id)
         )
     ).first()
@@ -603,41 +573,54 @@ def confirm_ai_transaction():
     if not category:
 
         flash(
-            "Invalid category.",
+            f"Category '{category_name}' was not found.",
             "error"
         )
 
         return redirect(
-            url_for(
-                "transaction.ai_add_transaction"
-            )
+            url_for("transaction.ai_add_transaction")
         )
 
     # --------------------------------------------------------
-    # Enums
+    # Entry type
     # --------------------------------------------------------
 
     try:
 
-        selected_entry_type = EntryType(
-            entry_type
+        entry_type = EntryType(
+            entry_type_value
         )
 
-        selected_payment_method = PaymentMethod(
-            payment_method
-        )
-
-    except ValueError:
+    except (ValueError, TypeError):
 
         flash(
-            "Invalid transaction type or payment method.",
+            "Invalid transaction type returned by AI.",
             "error"
         )
 
         return redirect(
-            url_for(
-                "transaction.ai_add_transaction"
-            )
+            url_for("transaction.ai_add_transaction")
+        )
+
+    # --------------------------------------------------------
+    # Payment method
+    # --------------------------------------------------------
+
+    try:
+
+        payment_method = PaymentMethod(
+            payment_method_value
+        )
+
+    except (ValueError, TypeError):
+
+        flash(
+            "Invalid payment method.",
+            "error"
+        )
+
+        return redirect(
+            url_for("transaction.ai_add_transaction")
         )
 
     # --------------------------------------------------------
@@ -646,12 +629,12 @@ def confirm_ai_transaction():
 
     parsed_date = None
 
-    if transaction_date:
+    if transaction_date_value:
 
         try:
 
             parsed_date = datetime.strptime(
-                transaction_date,
+                transaction_date_value,
                 "%Y-%m-%d"
             ).date()
 
@@ -663,32 +646,43 @@ def confirm_ai_transaction():
             )
 
             return redirect(
-                url_for(
-                    "transaction.ai_add_transaction"
-                )
+                url_for("transaction.ai_add_transaction")
             )
 
     # --------------------------------------------------------
-    # SAVE TO DATABASE
+    # Save
     # --------------------------------------------------------
 
-    create_transaction(
-        user_id=current_user.id,
-        category_id=category.id,
-        entry_type=selected_entry_type,
-        amount=amount,
-        description=description,
-        payment_method=selected_payment_method,
-        transaction_date=parsed_date
-    )
+    try:
+
+        create_transaction(
+            user_id=current_user.id,
+            category_id=category.id,
+            entry_type=entry_type,
+            amount=amount,
+            description=description,
+            payment_method=payment_method,
+            transaction_date=parsed_date
+        )
+
+    except Exception as exc:
+
+        print("Transaction save error:", exc)
+
+        flash(
+            "Could not save the transaction.",
+            "error"
+        )
+
+        return redirect(
+            url_for("transaction.ai_add_transaction")
+        )
 
     flash(
-        "AI transaction added successfully.",
+        "AI transaction added successfully!",
         "success"
     )
 
     return redirect(
-        url_for(
-            "dashboard.dashboard"
-        )
+        url_for("dashboard.dashboard")
     )
