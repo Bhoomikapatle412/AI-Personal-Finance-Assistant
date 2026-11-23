@@ -1,4 +1,3 @@
-
 {% extends "base.html" %}
 
 {% block content %}
@@ -10,7 +9,6 @@
         <h1>Welcome, {{ user.full_name }}!</h1>
         <p>Here's an overview of your finances.</p>
     </section>
-
 
     <!-- LIFETIME FINANCIAL OVERVIEW -->
     <section class="financial-overview mb-4">
@@ -45,7 +43,6 @@
             </div>
         </div>
     </section>
-
 
     <!-- CURRENT MONTH OVERVIEW -->
     <section class="monthly-overview mb-4">
@@ -90,9 +87,9 @@
         </div>
     </section>
 
-
     <!-- BUDGET OVERVIEW -->
     <section class="budget-overview mb-4">
+
         <div class="d-flex justify-content-between align-items-center flex-wrap mb-3">
             <h2>Monthly Budgets</h2>
 
@@ -109,7 +106,6 @@
                 {% for item in budget_overview %}
 
                     <div class="col-md-6 col-lg-4">
-
                         <div class="card p-3 h-100 shadow-sm">
 
                             <div class="d-flex justify-content-between align-items-center mb-2">
@@ -146,6 +142,7 @@
 
                             <p class="mb-2">
                                 Remaining:
+
                                 {% if item.remaining < 0 %}
                                     <span class="text-danger fw-bold">
                                         ₹{{ "%.2f"|format(item.remaining|abs|float) }} over budget
@@ -194,7 +191,6 @@
                             {% endif %}
 
                         </div>
-
                     </div>
 
                 {% endfor %}
@@ -205,6 +201,7 @@
 
             <div class="card p-4 text-center">
                 <h5>No budgets set for this month</h5>
+
                 <p class="text-muted">
                     Set category budgets to track your spending and avoid overspending.
                 </p>
@@ -218,8 +215,8 @@
             </div>
 
         {% endif %}
-    </section>
 
+    </section>
 
     <!-- MONTH-OVER-MONTH COMPARISON -->
     <section class="month-comparison mb-4">
@@ -272,7 +269,6 @@
         </div>
     </section>
 
-
     <!-- FINANCIAL INSIGHTS -->
     <section class="financial-insights mb-4">
         <h2>Financial Insights</h2>
@@ -295,12 +291,115 @@
         {% endif %}
     </section>
 
+    <!-- SMART SPENDING ANOMALY DETECTION -->
+    <section class="spending-anomalies mb-4">
+
+        <div class="d-flex justify-content-between align-items-center flex-wrap mb-3">
+            <h2>🔎 Smart Spending Alerts</h2>
+
+            {% if spending_anomalies %}
+                <span class="badge bg-danger fs-6">
+                    {{ spending_anomalies|length }} unusual transaction(s)
+                </span>
+            {% endif %}
+        </div>
+
+        {% if spending_anomalies %}
+
+            <div class="row g-3">
+
+                {% for anomaly in spending_anomalies %}
+
+                    <div class="col-md-6">
+                        <div class="card p-3 h-100 shadow-sm border-start border-4
+                            {% if anomaly.severity == 'high' %}
+                                border-danger
+                            {% elif anomaly.severity == 'medium' %}
+                                border-warning
+                            {% else %}
+                                border-info
+                            {% endif %}">
+
+                            <div class="d-flex justify-content-between align-items-center mb-2">
+
+                                <h5 class="mb-0">
+                                    {{ anomaly.description }}
+                                </h5>
+
+                                {% if anomaly.severity == 'high' %}
+                                    <span class="badge bg-danger">
+                                        High Alert
+                                    </span>
+                                {% elif anomaly.severity == 'medium' %}
+                                    <span class="badge bg-warning text-dark">
+                                        Medium
+                                    </span>
+                                {% else %}
+                                    <span class="badge bg-info text-dark">
+                                        Unusual
+                                    </span>
+                                {% endif %}
+
+                            </div>
+
+                            <h4 class="text-danger mb-2">
+                                ₹{{ "%.2f"|format(anomaly.amount) }}
+                            </h4>
+
+                            <p class="mb-1">
+                                <strong>Category:</strong>
+                                {{ anomaly.category }}
+                            </p>
+
+                            <p class="mb-1">
+                                <strong>Date:</strong>
+                                {{ anomaly.date.strftime('%d %b %Y') if anomaly.date.strftime is defined else anomaly.date }}
+                            </p>
+
+                            {% if anomaly.merchant %}
+                                <p class="mb-1">
+                                    <strong>Merchant:</strong>
+                                    {{ anomaly.merchant }}
+                                </p>
+                            {% endif %}
+
+                            <p class="text-muted mt-2 mb-2">
+                                {{ anomaly.message }}
+                            </p>
+
+                            <div class="small text-muted">
+                                Anomaly Score: {{ anomaly.score }}
+                            </div>
+
+                        </div>
+                    </div>
+
+                {% endfor %}
+
+            </div>
+
+        {% else %}
+
+            <div class="card p-4 text-center">
+                <h5 class="text-success">
+                    No unusual spending detected
+                </h5>
+
+                <p class="text-muted mb-0">
+                    Your recent expenses appear consistent with your usual spending patterns.
+                </p>
+            </div>
+
+        {% endif %}
+
+    </section>
 
     <!-- TRANSACTION ACTIONS -->
     <section class="transaction-actions mb-4">
         <h2>Add Transaction</h2>
 
         <div class="d-flex flex-wrap gap-2 mb-3">
+
             <a href="{{ url_for('transaction.ai_add_transaction') }}"
                class="btn btn-primary">
                 Add Transaction with AI
@@ -315,9 +414,9 @@
                class="btn btn-outline-secondary">
                 View All Transactions
             </a>
+
         </div>
     </section>
-
 
     <!-- SPENDING BY CATEGORY -->
     <section class="category-spending mb-4">
@@ -353,7 +452,6 @@
             <p>No expenses recorded yet.</p>
         {% endif %}
     </section>
-
 
     <!-- MONTHLY INCOME VS EXPENSES -->
     <section class="monthly-analytics mb-4">
@@ -392,7 +490,6 @@
         {% endif %}
     </section>
 
-
     <!-- RECENT TRANSACTIONS -->
     <section class="recent-transactions mb-4">
         <h2>Recent Transactions</h2>
@@ -418,7 +515,9 @@
                                 <td>{{ transaction.description }}</td>
                                 <td>{{ transaction.category.name }}</td>
                                 <td>{{ transaction.entry_type.value }}</td>
-                                <td>₹{{ "%.2f"|format(transaction.amount|float) }}</td>
+                                <td>
+                                    ₹{{ "%.2f"|format(transaction.amount|float) }}
+                                </td>
                             </tr>
                         {% endfor %}
                     </tbody>
@@ -430,7 +529,6 @@
         {% endif %}
     </section>
 
-
     <!-- ACCOUNT ACTIONS -->
     <section class="account-actions mb-4">
         <a href="{{ url_for('auth.logout') }}"
@@ -441,10 +539,8 @@
 
 </div>
 
-
 <!-- CHART.JS -->
 <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
-
 
 <!-- CATEGORY EXPENSE CHART -->
 {% if category_expenses %}
@@ -476,7 +572,6 @@
     }
 </script>
 {% endif %}
-
 
 <!-- MONTHLY INCOME VS EXPENSE CHART -->
 {% if monthly_data %}

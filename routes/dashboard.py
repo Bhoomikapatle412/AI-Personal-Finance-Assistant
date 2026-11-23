@@ -1,4 +1,3 @@
-
 from datetime import date
 
 from flask import Blueprint, render_template
@@ -13,6 +12,9 @@ from services.transaction_service import (
     get_financial_insights,
     get_budget_overview
 )
+
+from services.anomaly_detection_service import get_user_anomalies
+
 
 dashboard_bp = Blueprint("dashboard", __name__)
 
@@ -35,6 +37,8 @@ def dashboard():
         today.year
     )
 
+    spending_anomalies = get_user_anomalies(current_user.id)
+
     return render_template(
         "dashboard.html",
         user=current_user,
@@ -44,5 +48,6 @@ def dashboard():
         current_month_metrics=current_month_metrics,
         month_comparison=month_comparison,
         financial_insights=financial_insights,
-        budget_overview=budget_overview
+        budget_overview=budget_overview,
+        spending_anomalies=spending_anomalies
     )
