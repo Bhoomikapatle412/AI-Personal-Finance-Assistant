@@ -1,3 +1,4 @@
+
 from flask import Flask
 
 from config import Config
@@ -11,6 +12,8 @@ from routes.dashboard import dashboard_bp
 from routes.transaction import transaction_bp
 from routes.transactions import transactions_bp
 from routes.budget import budget_bp
+from routes.recurring import recurring_bp
+
 
 def create_app():
     app = Flask(__name__)
@@ -32,6 +35,7 @@ def create_app():
     app.register_blueprint(transaction_bp)
     app.register_blueprint(transactions_bp)
     app.register_blueprint(budget_bp)
+    app.register_blueprint(recurring_bp)
 
     return app
 
