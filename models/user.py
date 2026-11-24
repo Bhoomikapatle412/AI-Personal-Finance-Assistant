@@ -1,3 +1,4 @@
+
 from datetime import datetime
 
 from flask_login import UserMixin
@@ -48,6 +49,13 @@ class User(UserMixin, db.Model):
 
     ledger_entries = db.relationship(
         "Ledger",
+        back_populates="user",
+        cascade="all, delete-orphan",
+        lazy=True
+    )
+
+    financial_goals = db.relationship(
+        "FinancialGoal",
         back_populates="user",
         cascade="all, delete-orphan",
         lazy=True

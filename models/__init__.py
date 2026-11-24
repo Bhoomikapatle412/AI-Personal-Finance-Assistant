@@ -3,3 +3,4 @@ from .category import Category
 from .ledger import Ledger
 from .budget import Budget
 from .recurring_transaction import RecurringTransaction
+from .financial_goal import FinancialGoal, GoalContribution

@@ -3,8 +3,15 @@ from flask import Flask
 
 from config import Config
 from extensions import db, login_manager, migrate
+from routes.financial_goals import financial_goals_bp
 
-from models import User, Category, Ledger
+from models import (
+    User,
+    Category,
+    Ledger,
+    FinancialGoal,
+    GoalContribution
+)
 
 from routes.home import home_bp
 from routes.auth import auth_bp
@@ -36,6 +43,8 @@ def create_app():
     app.register_blueprint(transactions_bp)
     app.register_blueprint(budget_bp)
     app.register_blueprint(recurring_bp)
+    app.register_blueprint(financial_goals_bp)
+    
 
     return app
 

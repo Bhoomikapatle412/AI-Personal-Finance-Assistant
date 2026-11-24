@@ -1,0 +1,1266 @@
+
+{% extends "base.html" %}
+
+{% block title %}Financial Goals | AI Personal Finance Assistant{% endblock %}
+
+{% block content %}
+
+<style>
+    .goals-header {
+        margin-bottom: 28px;
+    }
+
+    .goals-header h1 {
+        font-weight: 700;
+        color: #212529;
+    }
+
+    .overview-card {
+        border: none;
+        border-radius: 14px;
+        box-shadow: 0 3px 12px rgba(0, 0, 0, 0.06);
+        height: 100%;
+    }
+
+    .overview-card h6 {
+        color: #6c757d;
+        font-size: 0.9rem;
+        margin-bottom: 10px;
+    }
+
+    .overview-value {
+        font-size: 1.65rem;
+        font-weight: 700;
+        margin-bottom: 0;
+    }
+
+    .goal-card {
+        border: none;
+        border-radius: 14px;
+        box-shadow: 0 3px 14px rgba(0, 0, 0, 0.07);
+        transition: transform 0.2s ease;
+        height: 100%;
+    }
+
+    .goal-card:hover {
+        transform: translateY(-3px);
+    }
+
+    .goal-card .progress {
+        height: 10px;
+        border-radius: 10px;
+        background-color: #e9ecef;
+    }
+
+    .goal-card .progress-bar {
+        border-radius: 10px;
+    }
+
+    .goal-description {
+        color: #6c757d;
+        min-height: 40px;
+        overflow-wrap: anywhere;
+    }
+
+    .goal-amount {
+        font-size: 1.4rem;
+        font-weight: 700;
+    }
+
+    .goal-actions button {
+        font-size: 0.85rem;
+    }
+
+    .empty-state {
+        border: 2px dashed #dee2e6;
+        border-radius: 14px;
+        padding: 45px 20px;
+        text-align: center;
+        background: #fff;
+    }
+
+    .empty-state h4 {
+        font-weight: 600;
+    }
+
+    .modal-content {
+        border: none;
+        border-radius: 14px;
+    }
+
+    .modal-header {
+        border-bottom: 1px solid #eee;
+    }
+
+    .modal-footer {
+        border-top: 1px solid #eee;
+    }
+
+    .history-amount {
+        font-weight: 600;
+        color: #198754;
+    }
+
+    .goal-meta {
+        font-size: 0.88rem;
+        color: #6c757d;
+    }
+
+    @media (max-width: 576px) {
+        .goals-header h1 {
+            font-size: 1.6rem;
+        }
+
+        .overview-value {
+            font-size: 1.35rem;
+        }
+    }
+</style>
+
+<div class="financial-goals-container">
+
+    <!-- PAGE HEADER -->
+    <section class="goals-header d-flex justify-content-between align-items-center flex-wrap gap-3">
+
+        <div>
+            <h1>Financial Goals</h1>
+            <p class="text-muted mb-0">
+                Set savings targets, track contributions, and turn your plans into progress.
+            </p>
+        </div>
+
+        <button
+            class="btn btn-primary"
+            type="button"
+            data-bs-toggle="modal"
+            data-bs-target="#goalModal"
+            onclick="openCreateGoalModal()">
+
+            + Create New Goal
+        </button>
+
+    </section>
+
+
+    <!-- ALERT AREA -->
+    <div id="alertContainer" aria-live="polite"></div>
+
+
+    <!-- OVERVIEW CARDS -->
+    <section class="mb-4">
+
+        <div class="row g-3">
+
+            <div class="col-md-4">
+                <div class="card overview-card p-3">
+                    <h6>Total Goals</h6>
+                    <p class="overview-value" id="totalGoals">0</p>
+                </div>
+            </div>
+
+            <div class="col-md-4">
+                <div class="card overview-card p-3">
+                    <h6>Total Saved</h6>
+                    <p class="overview-value text-success" id="totalSaved">
+                        ₹0.00
+                    </p>
+                </div>
+            </div>
+
+            <div class="col-md-4">
+                <div class="card overview-card p-3">
+                    <h6>Active Goals</h6>
+                    <p class="overview-value text-primary" id="activeGoals">
+                        0
+                    </p>
+                </div>
+            </div>
+
+        </div>
+
+    </section>
+
+
+    <!-- GOALS SECTION -->
+    <section class="mb-5">
+
+        <div class="d-flex justify-content-between align-items-center mb-3">
+            <h2 class="h4 mb-0">Your Savings Goals</h2>
+            <span class="text-muted small" id="goalCountLabel"></span>
+        </div>
+
+        <div class="row g-3" id="goalsContainer">
+
+            {% for goal in goals %}
+
+            <div class="col-md-6 col-xl-4">
+                <div class="card goal-card p-3">
+                    <div class="card-body">
+                        <p class="text-muted">Loading goal...</p>
+                    </div>
+                </div>
+            </div>
+
+            {% else %}
+
+            <div class="col-12" id="initialEmptyState">
+                <div class="empty-state">
+                    <h4>No financial goals yet</h4>
+                    <p class="text-muted">
+                        Start planning your savings by creating your first financial goal.
+                    </p>
+                    <button
+                        class="btn btn-primary"
+                        data-bs-toggle="modal"
+                        data-bs-target="#goalModal"
+                        onclick="openCreateGoalModal()">
+                        Create Your First Goal
+                    </button>
+                </div>
+            </div>
+
+            {% endfor %}
+
+        </div>
+
+    </section>
+
+</div>
+
+
+<!-- =====================================================
+     CREATE / EDIT GOAL MODAL
+===================================================== -->
+
+<div
+    class="modal fade"
+    id="goalModal"
+    tabindex="-1"
+    aria-labelledby="goalModalTitle"
+    aria-hidden="true">
+
+    <div class="modal-dialog modal-dialog-centered">
+
+        <div class="modal-content">
+
+            <div class="modal-header">
+                <h5 class="modal-title" id="goalModalTitle">
+                    Create Financial Goal
+                </h5>
+
+                <button
+                    type="button"
+                    class="btn-close"
+                    data-bs-dismiss="modal"
+                    aria-label="Close">
+                </button>
+            </div>
+
+            <form id="goalForm">
+
+                <div class="modal-body">
+
+                    <input type="hidden" id="goalId">
+
+                    <div class="mb-3">
+                        <label for="goalName" class="form-label">
+                            Goal Name *
+                        </label>
+
+                        <input
+                            type="text"
+                            class="form-control"
+                            id="goalName"
+                            maxlength="100"
+                            placeholder="e.g. Buy a Laptop"
+                            required>
+                    </div>
+
+                    <div class="mb-3">
+                        <label for="goalDescription" class="form-label">
+                            Description
+                        </label>
+
+                        <textarea
+                            class="form-control"
+                            id="goalDescription"
+                            rows="3"
+                            maxlength="10000"
+                            placeholder="Describe your savings goal">
+                        </textarea>
+                    </div>
+
+                    <div class="mb-3">
+                        <label for="targetAmount" class="form-label">
+                            Target Amount (₹) *
+                        </label>
+
+                        <input
+                            type="number"
+                            class="form-control"
+                            id="targetAmount"
+                            min="0.01"
+                            step="0.01"
+                            placeholder="50000"
+                            required>
+                    </div>
+
+                    <div class="mb-3">
+                        <label for="targetDate" class="form-label">
+                            Target Date
+                        </label>
+
+                        <input
+                            type="date"
+                            class="form-control"
+                            id="targetDate">
+                    </div>
+
+                    <div id="goalFormError" class="alert alert-danger d-none"></div>
+
+                </div>
+
+                <div class="modal-footer">
+
+                    <button
+                        type="button"
+                        class="btn btn-outline-secondary"
+                        data-bs-dismiss="modal">
+                        Cancel
+                    </button>
+
+                    <button
+                        type="submit"
+                        class="btn btn-primary"
+                        id="saveGoalButton">
+                        Save Goal
+                    </button>
+
+                </div>
+
+            </form>
+
+        </div>
+
+    </div>
+
+</div>
+
+
+<!-- =====================================================
+     ADD CONTRIBUTION MODAL
+===================================================== -->
+
+<div
+    class="modal fade"
+    id="contributionModal"
+    tabindex="-1"
+    aria-labelledby="contributionModalTitle"
+    aria-hidden="true">
+
+    <div class="modal-dialog modal-dialog-centered">
+
+        <div class="modal-content">
+
+            <div class="modal-header">
+                <h5 class="modal-title" id="contributionModalTitle">
+                    Add Savings Contribution
+                </h5>
+
+                <button
+                    type="button"
+                    class="btn-close"
+                    data-bs-dismiss="modal"
+                    aria-label="Close">
+                </button>
+            </div>
+
+            <form id="contributionForm">
+
+                <div class="modal-body">
+
+                    <input type="hidden" id="contributionGoalId">
+
+                    <div class="mb-3">
+                        <label class="form-label">
+                            Contribution Amount (₹) *
+                        </label>
+
+                        <input
+                            type="number"
+                            class="form-control"
+                            id="contributionAmount"
+                            min="0.01"
+                            step="0.01"
+                            required>
+                    </div>
+
+                    <div class="mb-3">
+                        <label class="form-label">
+                            Contribution Date
+                        </label>
+
+                        <input
+                            type="date"
+                            class="form-control"
+                            id="contributionDate">
+                    </div>
+
+                    <div class="mb-3">
+                        <label class="form-label">
+                            Note
+                        </label>
+
+                        <input
+                            type="text"
+                            class="form-control"
+                            id="contributionNote"
+                            maxlength="255"
+                            placeholder="e.g. Monthly savings">
+                    </div>
+
+                    <div id="contributionError" class="alert alert-danger d-none"></div>
+
+                </div>
+
+                <div class="modal-footer">
+
+                    <button
+                        type="button"
+                        class="btn btn-outline-secondary"
+                        data-bs-dismiss="modal">
+                        Cancel
+                    </button>
+
+                    <button
+                        type="submit"
+                        class="btn btn-success"
+                        id="saveContributionButton">
+                        Add Contribution
+                    </button>
+
+                </div>
+
+            </form>
+
+        </div>
+
+    </div>
+
+</div>
+
+
+<!-- =====================================================
+     CONTRIBUTION HISTORY MODAL
+===================================================== -->
+
+<div
+    class="modal fade"
+    id="historyModal"
+    tabindex="-1"
+    aria-labelledby="historyModalTitle"
+    aria-hidden="true">
+
+    <div class="modal-dialog modal-lg modal-dialog-centered">
+
+        <div class="modal-content">
+
+            <div class="modal-header">
+                <h5 class="modal-title" id="historyModalTitle">
+                    Contribution History
+                </h5>
+
+                <button
+                    type="button"
+                    class="btn-close"
+                    data-bs-dismiss="modal"
+                    aria-label="Close">
+                </button>
+            </div>
+
+            <div class="modal-body" id="historyContainer">
+                <p class="text-muted">Loading contributions...</p>
+            </div>
+
+        </div>
+
+    </div>
+
+</div>
+
+
+<!-- =====================================================
+     JAVASCRIPT
+===================================================== -->
+
+<script>
+
+const API_BASE = "/financial-goals";
+
+let financialGoals = {{ goals|tojson }};
+
+const goalModal = new bootstrap.Modal(
+    document.getElementById("goalModal")
+);
+
+const contributionModal = new bootstrap.Modal(
+    document.getElementById("contributionModal")
+);
+
+const historyModal = new bootstrap.Modal(
+    document.getElementById("historyModal")
+);
+
+
+// -----------------------------------------------------
+// FORMAT CURRENCY
+// -----------------------------------------------------
+
+function formatCurrency(amount) {
+
+    return new Intl.NumberFormat("en-IN", {
+        style: "currency",
+        currency: "INR",
+        minimumFractionDigits: 2
+    }).format(Number(amount || 0));
+
+}
+
+
+// -----------------------------------------------------
+// ESCAPE HTML
+// -----------------------------------------------------
+
+function escapeHTML(value) {
+
+    return String(value ?? "").replace(/[&<>"']/g, character => ({
+        "&": "&amp;",
+        "<": "&lt;",
+        ">": "&gt;",
+        '"': "&quot;",
+        "'": "&#039;"
+    })[character]);
+
+}
+
+
+// -----------------------------------------------------
+// SHOW ALERT
+// -----------------------------------------------------
+
+function showAlert(message, type = "success") {
+
+    const container = document.getElementById("alertContainer");
+
+    container.innerHTML = `
+        <div class="alert alert-${type} alert-dismissible fade show"
+             role="alert">
+
+            ${escapeHTML(message)}
+
+            <button
+                type="button"
+                class="btn-close"
+                data-bs-dismiss="alert">
+            </button>
+
+        </div>
+    `;
+
+    window.scrollTo({
+        top: 0,
+        behavior: "smooth"
+    });
+
+}
+
+
+// -----------------------------------------------------
+// API REQUEST HELPER
+// -----------------------------------------------------
+
+async function apiRequest(url, options = {}) {
+
+    const response = await fetch(url, {
+        ...options,
+        headers: {
+            "Content-Type": "application/json",
+            ...options.headers
+        }
+    });
+
+    const data = await response.json().catch(() => ({}));
+
+    if (!response.ok) {
+        throw new Error(
+            data.error || "Something went wrong. Please try again."
+        );
+    }
+
+    return data;
+
+}
+
+
+// -----------------------------------------------------
+// LOAD GOALS
+// -----------------------------------------------------
+
+async function loadGoals() {
+
+    try {
+
+        const data = await apiRequest(`${API_BASE}/`);
+
+        financialGoals = data.goals || [];
+
+        renderGoals();
+
+        updateOverview();
+
+    } catch (error) {
+
+        showAlert(error.message, "danger");
+
+    }
+
+}
+
+
+// -----------------------------------------------------
+// UPDATE OVERVIEW CARDS
+// -----------------------------------------------------
+
+function updateOverview() {
+
+    const totalGoals = financialGoals.length;
+
+    const totalSaved = financialGoals.reduce(
+        (total, goal) => total + Number(goal.saved_amount || 0),
+        0
+    );
+
+    const activeGoals = financialGoals.filter(
+        goal => !goal.is_completed
+    ).length;
+
+    document.getElementById("totalGoals").textContent = totalGoals;
+
+    document.getElementById("totalSaved").textContent =
+        formatCurrency(totalSaved);
+
+    document.getElementById("activeGoals").textContent = activeGoals;
+
+    document.getElementById("goalCountLabel").textContent =
+        `${totalGoals} goal${totalGoals === 1 ? "" : "s"}`;
+}
+
+
+// -----------------------------------------------------
+// RENDER GOALS
+// -----------------------------------------------------
+
+function renderGoals() {
+
+    const container = document.getElementById("goalsContainer");
+
+    if (!financialGoals.length) {
+
+        container.innerHTML = `
+            <div class="col-12">
+                <div class="empty-state">
+
+                    <h4>No financial goals yet</h4>
+
+                    <p class="text-muted">
+                        Start planning your savings by creating your first financial goal.
+                    </p>
+
+                    <button
+                        class="btn btn-primary"
+                        onclick="openCreateGoalModal()"
+                        data-bs-toggle="modal"
+                        data-bs-target="#goalModal">
+
+                        Create Your First Goal
+
+                    </button>
+
+                </div>
+            </div>
+        `;
+
+        return;
+
+    }
+
+    container.innerHTML = financialGoals.map(goal => {
+
+        const percentage = Math.min(
+            Math.max(Number(goal.progress_percentage || 0), 0),
+            100
+        );
+
+        let statusBadge = "";
+
+        if (goal.is_completed) {
+
+            statusBadge = `
+                <span class="badge bg-success">
+                    Completed
+                </span>
+            `;
+
+        } else if (goal.is_overdue) {
+
+            statusBadge = `
+                <span class="badge bg-danger">
+                    Overdue
+                </span>
+            `;
+
+        } else {
+
+            statusBadge = `
+                <span class="badge bg-primary">
+                    In Progress
+                </span>
+            `;
+
+        }
+
+        let monthlyRequirement = "";
+
+        if (goal.monthly_savings_required !== null) {
+
+            monthlyRequirement = `
+                <p class="goal-meta mb-2">
+                    Monthly savings needed:
+                    <strong>
+                        ${formatCurrency(goal.monthly_savings_required)}
+                    </strong>
+                </p>
+            `;
+
+        }
+
+        return `
+            <div class="col-md-6 col-xl-4">
+
+                <div class="card goal-card p-3">
+
+                    <div class="card-body">
+
+                        <div class="d-flex justify-content-between align-items-start mb-3">
+
+                            <h5 class="fw-bold mb-0">
+                                ${escapeHTML(goal.name)}
+                            </h5>
+
+                            ${statusBadge}
+
+                        </div>
+
+                        <p class="goal-description">
+                            ${escapeHTML(goal.description || "No description provided.")}
+                        </p>
+
+                        <p class="goal-amount mb-1">
+                            ${formatCurrency(goal.saved_amount)}
+                        </p>
+
+                        <p class="goal-meta mb-3">
+                            of ${formatCurrency(goal.target_amount)} saved
+                        </p>
+
+                        <div class="d-flex justify-content-between small mb-2">
+
+                            <span>Progress</span>
+
+                            <strong>${percentage.toFixed(2)}%</strong>
+
+                        </div>
+
+                        <div
+                            class="progress mb-3"
+                            role="progressbar"
+                            aria-label="Goal progress"
+                            aria-valuenow="${percentage}"
+                            aria-valuemin="0"
+                            aria-valuemax="100">
+
+                            <div
+                                class="progress-bar ${goal.is_completed ? "bg-success" : "bg-primary"}"
+                                style="width: ${percentage}%">
+                            </div>
+
+                        </div>
+
+                        <p class="mb-2">
+                            <span class="text-muted">Remaining:</span>
+
+                            <strong>
+                                ${formatCurrency(goal.remaining_amount)}
+                            </strong>
+                        </p>
+
+                        <p class="goal-meta mb-2">
+                            Target date:
+                            <strong>
+                                ${goal.target_date || "Not specified"}
+                            </strong>
+                        </p>
+
+                        ${monthlyRequirement}
+
+                        <hr>
+
+                        <div class="goal-actions d-flex flex-wrap gap-2">
+
+                            ${
+                                !goal.is_completed
+                                ? `
+                                    <button
+                                        class="btn btn-success btn-sm"
+                                        onclick="openContributionModal(${goal.id})">
+
+                                        + Add Savings
+
+                                    </button>
+                                `
+                                : ""
+                            }
+
+                            <button
+                                class="btn btn-outline-primary btn-sm"
+                                onclick="viewContributionHistory(${goal.id})">
+
+                                History
+
+                            </button>
+
+                            <button
+                                class="btn btn-outline-secondary btn-sm"
+                                onclick="editGoal(${goal.id})">
+
+                                Edit
+
+                            </button>
+
+                            <button
+                                class="btn btn-outline-danger btn-sm"
+                                onclick="deleteGoal(${goal.id})">
+
+                                Delete
+
+                            </button>
+
+                        </div>
+
+                    </div>
+
+                </div>
+
+            </div>
+        `;
+
+    }).join("");
+
+}
+
+
+// -----------------------------------------------------
+// CREATE GOAL MODAL
+// -----------------------------------------------------
+
+function openCreateGoalModal() {
+
+    document.getElementById("goalForm").reset();
+
+    document.getElementById("goalId").value = "";
+
+    document.getElementById("goalModalTitle").textContent =
+        "Create Financial Goal";
+
+    document.getElementById("saveGoalButton").textContent =
+        "Save Goal";
+
+    document.getElementById("goalFormError").classList.add("d-none");
+
+}
+
+
+// -----------------------------------------------------
+// CREATE / UPDATE GOAL
+// -----------------------------------------------------
+
+document.getElementById("goalForm").addEventListener(
+    "submit",
+    async function(event) {
+
+        event.preventDefault();
+
+        const goalId = document.getElementById("goalId").value;
+
+        const payload = {
+            name: document.getElementById("goalName").value.trim(),
+
+            description: document.getElementById("goalDescription").value.trim(),
+
+            target_amount: document.getElementById("targetAmount").value,
+
+            target_date: document.getElementById("targetDate").value || null
+        };
+
+        const errorBox = document.getElementById("goalFormError");
+
+        const saveButton = document.getElementById("saveGoalButton");
+
+        errorBox.classList.add("d-none");
+
+        saveButton.disabled = true;
+        saveButton.textContent = "Saving...";
+
+        try {
+
+            if (goalId) {
+
+                await apiRequest(`${API_BASE}/${goalId}`, {
+                    method: "PUT",
+                    body: JSON.stringify(payload)
+                });
+
+                showAlert("Financial goal updated successfully.");
+
+            } else {
+
+                await apiRequest(`${API_BASE}/`, {
+                    method: "POST",
+                    body: JSON.stringify(payload)
+                });
+
+                showAlert("Financial goal created successfully.");
+
+            }
+
+            goalModal.hide();
+
+            await loadGoals();
+
+        } catch (error) {
+
+            errorBox.textContent = error.message;
+
+            errorBox.classList.remove("d-none");
+
+        } finally {
+
+            saveButton.disabled = false;
+
+            saveButton.textContent = goalId
+                ? "Update Goal"
+                : "Save Goal";
+
+        }
+
+    }
+);
+
+
+// -----------------------------------------------------
+// EDIT GOAL
+// -----------------------------------------------------
+
+function editGoal(goalId) {
+
+    const goal = financialGoals.find(
+        item => item.id === goalId
+    );
+
+    if (!goal) {
+        showAlert("Goal not found.", "danger");
+        return;
+    }
+
+    document.getElementById("goalId").value = goal.id;
+
+    document.getElementById("goalName").value = goal.name;
+
+    document.getElementById("goalDescription").value =
+        goal.description || "";
+
+    document.getElementById("targetAmount").value =
+        goal.target_amount;
+
+    document.getElementById("targetDate").value =
+        goal.target_date || "";
+
+    document.getElementById("goalModalTitle").textContent =
+        "Edit Financial Goal";
+
+    document.getElementById("saveGoalButton").textContent =
+        "Update Goal";
+
+    document.getElementById("goalFormError").classList.add("d-none");
+
+    goalModal.show();
+
+}
+
+
+// -----------------------------------------------------
+// OPEN CONTRIBUTION MODAL
+// -----------------------------------------------------
+
+function openContributionModal(goalId) {
+
+    const goal = financialGoals.find(
+        item => item.id === goalId
+    );
+
+    if (!goal || goal.is_completed) {
+        showAlert("This goal cannot receive more contributions.", "warning");
+        return;
+    }
+
+    document.getElementById("contributionForm").reset();
+
+    document.getElementById("contributionGoalId").value = goalId;
+
+    document.getElementById("contributionDate").value =
+        new Date().toISOString().split("T")[0];
+
+    document.getElementById("contributionAmount").max =
+        goal.remaining_amount;
+
+    document.getElementById("contributionError").classList.add("d-none");
+
+    contributionModal.show();
+
+}
+
+
+// -----------------------------------------------------
+// ADD CONTRIBUTION
+// -----------------------------------------------------
+
+document.getElementById("contributionForm").addEventListener(
+    "submit",
+    async function(event) {
+
+        event.preventDefault();
+
+        const goalId = document.getElementById("contributionGoalId").value;
+
+        const payload = {
+            amount: document.getElementById("contributionAmount").value,
+
+            note: document.getElementById("contributionNote").value.trim(),
+
+            contribution_date:
+                document.getElementById("contributionDate").value || null
+        };
+
+        const errorBox = document.getElementById("contributionError");
+
+        const saveButton =
+            document.getElementById("saveContributionButton");
+
+        errorBox.classList.add("d-none");
+
+        saveButton.disabled = true;
+        saveButton.textContent = "Adding...";
+
+        try {
+
+            await apiRequest(
+                `${API_BASE}/${goalId}/contributions`,
+                {
+                    method: "POST",
+                    body: JSON.stringify(payload)
+                }
+            );
+
+            contributionModal.hide();
+
+            showAlert("Savings contribution added successfully.");
+
+            await loadGoals();
+
+        } catch (error) {
+
+            errorBox.textContent = error.message;
+
+            errorBox.classList.remove("d-none");
+
+        } finally {
+
+            saveButton.disabled = false;
+            saveButton.textContent = "Add Contribution";
+
+        }
+
+    }
+);
+
+
+// -----------------------------------------------------
+// VIEW CONTRIBUTION HISTORY
+// -----------------------------------------------------
+
+async function viewContributionHistory(goalId) {
+
+    const container = document.getElementById("historyContainer");
+
+    const goal = financialGoals.find(
+        item => item.id === goalId
+    );
+
+    if (!goal) {
+        showAlert("Goal not found.", "danger");
+        return;
+    }
+
+    document.getElementById("historyModalTitle").textContent =
+        `${goal.name} - Contribution History`;
+
+    container.innerHTML = `
+        <p class="text-muted">Loading contributions...</p>
+    `;
+
+    historyModal.show();
+
+    try {
+
+        const data = await apiRequest(`${API_BASE}/${goalId}`);
+
+        const contributions = data.contributions || [];
+
+        if (!contributions.length) {
+
+            container.innerHTML = `
+                <div class="text-center py-4">
+
+                    <h6>No contributions yet</h6>
+
+                    <p class="text-muted">
+                        Your savings contributions will appear here.
+                    </p>
+
+                </div>
+            `;
+
+            return;
+
+        }
+
+        container.innerHTML = `
+            <div class="table-responsive">
+
+                <table class="table table-hover align-middle">
+
+                    <thead>
+                        <tr>
+                            <th>Date</th>
+                            <th>Note</th>
+                            <th class="text-end">Amount</th>
+                        </tr>
+                    </thead>
+
+                    <tbody>
+
+                        ${contributions.map(item => `
+                            <tr>
+
+                                <td>
+                                    ${escapeHTML(item.contribution_date)}
+                                </td>
+
+                                <td>
+                                    ${escapeHTML(item.note || "Savings contribution")}
+                                </td>
+
+                                <td class="text-end history-amount">
+                                    + ${formatCurrency(item.amount)}
+                                </td>
+
+                            </tr>
+                        `).join("")}
+
+                    </tbody>
+
+                </table>
+
+            </div>
+        `;
+
+    } catch (error) {
+
+        container.innerHTML = `
+            <div class="alert alert-danger">
+                ${escapeHTML(error.message)}
+            </div>
+        `;
+
+    }
+
+}
+
+
+// -----------------------------------------------------
+// DELETE GOAL
+// -----------------------------------------------------
+
+async function deleteGoal(goalId) {
+
+    const goal = financialGoals.find(
+        item => item.id === goalId
+    );
+
+    if (!goal) {
+        showAlert("Goal not found.", "danger");
+        return;
+    }
+
+    const confirmed = window.confirm(
+        `Are you sure you want to delete "${goal.name}"?\n\nAll its contribution history will also be deleted.`
+    );
+
+    if (!confirmed) {
+        return;
+    }
+
+    try {
+
+        await apiRequest(`${API_BASE}/${goalId}`, {
+            method: "DELETE"
+        });
+
+        showAlert("Financial goal deleted successfully.");
+
+        await loadGoals();
+
+    } catch (error) {
+
+        showAlert(error.message, "danger");
+
+    }
+
+}
+
+
+// -----------------------------------------------------
+// INITIALIZE PAGE
+// -----------------------------------------------------
+
+document.addEventListener("DOMContentLoaded", function() {
+
+    renderGoals();
+
+    updateOverview();
+
+});
+
+</script>
+
+{% endblock %}
