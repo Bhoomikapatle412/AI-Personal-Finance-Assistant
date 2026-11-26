@@ -3,14 +3,15 @@ from flask import Flask
 
 from config import Config
 from extensions import db, login_manager, migrate
-from routes.financial_goals import financial_goals_bp
 
 from models import (
     User,
     Category,
     Ledger,
     FinancialGoal,
-    GoalContribution
+    GoalContribution,
+    SubscriptionBill,
+    BillPayment
 )
 
 from routes.home import home_bp
@@ -20,9 +21,12 @@ from routes.transaction import transaction_bp
 from routes.transactions import transactions_bp
 from routes.budget import budget_bp
 from routes.recurring import recurring_bp
+from routes.financial_goals import financial_goals_bp
+from routes.subscription_bills import subscription_bills_bp
 
 
 def create_app():
+
     app = Flask(__name__)
 
     app.config.from_object(Config)
@@ -44,7 +48,7 @@ def create_app():
     app.register_blueprint(budget_bp)
     app.register_blueprint(recurring_bp)
     app.register_blueprint(financial_goals_bp)
-    
+    app.register_blueprint(subscription_bills_bp)
 
     return app
 
