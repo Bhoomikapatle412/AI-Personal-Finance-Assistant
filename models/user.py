@@ -61,20 +61,22 @@ class User(UserMixin, db.Model):
         lazy=True
     )
 
+    subscription_bills = db.relationship(
+        "SubscriptionBill",
+        back_populates="user",
+        cascade="all, delete-orphan",
+        lazy=True
+    )
+
     def __repr__(self):
         return f"<User {self.email}>"
 
 
 @login_manager.user_loader
 def load_user(user_id):
-
     try:
         user_id = int(user_id)
-
     except (TypeError, ValueError):
         return None
 
-    return db.session.get(
-        User,
-        user_id
-    )
+    return db.session.get(User, user_id)

@@ -12,8 +12,9 @@
         rel="stylesheet"
     >
 
-    <!-- Load Bootstrap before page-specific JavaScript -->
     <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.7/dist/js/bootstrap.bundle.min.js"></script>
+
+    {% block extra_css %}{% endblock %}
 </head>
 
 <body>
@@ -22,7 +23,7 @@
     <div class="container">
 
         <a class="navbar-brand" href="/">
-            💰 AI Personal Finance Assistant
+            AI Personal Finance Assistant
         </a>
 
         <button
@@ -66,6 +67,12 @@
                     </a>
                 </li>
 
+                <li class="nav-item">
+                    <a class="nav-link" href="{{ url_for('subscription_bills.subscription_bills_page') }}">
+                        Subscriptions & Bills
+                    </a>
+                </li>
+
             </ul>
         </div>
     </div>
@@ -74,6 +81,8 @@
 <div class="container mt-4">
     {% block content %}{% endblock %}
 </div>
+
+{% block extra_js %}{% endblock %}
 
 </body>
 </html>
