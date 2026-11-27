@@ -1,4 +1,3 @@
-
 import unittest
 from datetime import date
 from decimal import Decimal
@@ -240,6 +239,35 @@ class TestFinancialReportService(unittest.TestCase):
         self.assertEqual(trend[1]["period"], "2026-02")
         self.assertEqual(trend[1]["income"], Decimal("40000.00"))
 
+    def test_daily_trend_groups_transactions(self):
+        self.add_transaction(
+            EntryType.INCOME, 5000, date(2026, 1, 5)
+        )
+
+        self.add_transaction(
+            EntryType.EXPENSE, 1000, date(2026, 1, 5)
+        )
+
+        self.add_transaction(
+            EntryType.EXPENSE, 2000, date(2026, 1, 6)
+        )
+
+        trend = get_income_expense_trend(
+            self.user_id,
+            date(2026, 1, 5),
+            date(2026, 1, 6),
+            group_by="daily"
+        )
+
+        self.assertEqual(len(trend), 2)
+
+        self.assertEqual(trend[0]["period"], "2026-01-05")
+        self.assertEqual(trend[0]["income"], Decimal("5000.00"))
+        self.assertEqual(trend[0]["expenses"], Decimal("1000.00"))
+
+        self.assertEqual(trend[1]["period"], "2026-01-06")
+        self.assertEqual(trend[1]["expenses"], Decimal("2000.00"))
+
     def test_quarterly_trend_groups_correctly(self):
         self.add_transaction(
             EntryType.INCOME, 10000, date(2026, 1, 10)
@@ -260,6 +288,40 @@ class TestFinancialReportService(unittest.TestCase):
             [item["period"] for item in trend],
             ["2026-Q1", "2026-Q2"]
         )
+
+    def test_yearly_trend_groups_correctly(self):
+        self.add_transaction(
+            EntryType.INCOME, 50000, date(2025, 6, 10)
+        )
+
+        self.add_transaction(
+            EntryType.EXPENSE, 10000, date(2025, 8, 15)
+        )
+
+        self.add_transaction(
+            EntryType.INCOME, 80000, date(2026, 3, 20)
+        )
+
+        self.add_transaction(
+            EntryType.EXPENSE, 20000, date(2026, 7, 10)
+        )
+
+        trend = get_income_expense_trend(
+            self.user_id,
+            date(2025, 1, 1),
+            date(2026, 12, 31),
+            group_by="yearly"
+        )
+
+        self.assertEqual(len(trend), 2)
+
+        self.assertEqual(trend[0]["period"], "2025")
+        self.assertEqual(trend[0]["income"], Decimal("50000.00"))
+        self.assertEqual(trend[0]["expenses"], Decimal("10000.00"))
+
+        self.assertEqual(trend[1]["period"], "2026")
+        self.assertEqual(trend[1]["income"], Decimal("80000.00"))
+        self.assertEqual(trend[1]["expenses"], Decimal("20000.00"))
 
     def test_invalid_trend_grouping_is_rejected(self):
         with self.assertRaises(ValueError):
@@ -293,7 +355,39 @@ class TestFinancialReportService(unittest.TestCase):
         self.assertEqual(breakdown[0]["category_name"], "Food")
         self.assertEqual(breakdown[0]["expenses"], Decimal("5000.00"))
         self.assertEqual(breakdown[0]["refunds"], Decimal("1000.00"))
-        self.assertEqual(breakdown[0]["net_expenses"], Decimal("4000.00"))
+        self.assertEqual(
+            breakdown[0]["net_expenses"],
+            Decimal("4000.00")
+        )
+
+    def test_category_breakdown_handles_refunds_exceeding_expenses(self):
+        self.add_transaction(
+            EntryType.EXPENSE, 1000, date(2026, 1, 5)
+        )
+
+        self.add_transaction(
+            EntryType.REFUND, 1500, date(2026, 1, 10)
+        )
+
+        breakdown = get_category_expense_breakdown(
+            self.user_id,
+            date(2026, 1, 1),
+            date(2026, 1, 31)
+        )
+
+        self.assertEqual(len(breakdown), 1)
+        self.assertEqual(
+            breakdown[0]["expenses"],
+            Decimal("1000.00")
+        )
+        self.assertEqual(
+            breakdown[0]["refunds"],
+            Decimal("1500.00")
+        )
+        self.assertEqual(
+            breakdown[0]["net_expenses"],
+            Decimal("-500.00")
+        )
 
     # --------------------------------------------------------
     # PAYMENT METHOD BREAKDOWN
@@ -337,6 +431,41 @@ class TestFinancialReportService(unittest.TestCase):
         self.assertEqual(upi["expenses"], Decimal("2000.00"))
         self.assertEqual(upi["refunds"], Decimal("500.00"))
         self.assertEqual(upi["net_expenses"], Decimal("1500.00"))
+
+    def test_payment_method_breakdown_handles_refunds_exceeding_expenses(self):
+        self.add_transaction(
+            EntryType.EXPENSE,
+            1000,
+            date(2026, 1, 5),
+            payment_method=PaymentMethod.UPI
+        )
+
+        self.add_transaction(
+            EntryType.REFUND,
+            1500,
+            date(2026, 1, 10),
+            payment_method=PaymentMethod.UPI
+        )
+
+        breakdown = get_payment_method_breakdown(
+            self.user_id,
+            date(2026, 1, 1),
+            date(2026, 1, 31)
+        )
+
+        self.assertEqual(len(breakdown), 1)
+        self.assertEqual(
+            breakdown[0]["payment_method"], "UPI"
+        )
+        self.assertEqual(
+            breakdown[0]["expenses"], Decimal("1000.00")
+        )
+        self.assertEqual(
+            breakdown[0]["refunds"], Decimal("1500.00")
+        )
+        self.assertEqual(
+            breakdown[0]["net_expenses"], Decimal("-500.00")
+        )
 
     # --------------------------------------------------------
     # BUDGET VS ACTUAL
