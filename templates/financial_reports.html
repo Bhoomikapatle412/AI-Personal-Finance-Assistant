@@ -1,4 +1,3 @@
-
 {% extends "base.html" %}
 
 {% block title %}Financial Reports | AI Personal Finance Assistant{% endblock %}
@@ -62,6 +61,9 @@
 
 
 {% block content %}
+
+{% set chart_category_breakdown = category_breakdown | selectattr("net_expenses", "gt", 0) | list %}
+{% set chart_payment_breakdown = payment_method_breakdown | selectattr("net_expenses", "gt", 0) | list %}
 
 <div class="report-header d-flex justify-content-between align-items-center flex-wrap gap-3">
     <div>
@@ -244,8 +246,6 @@
     </div>
 
 </div>
-
-
 <!-- =====================================================
      INCOME VS EXPENSE TREND
 ===================================================== -->
@@ -278,13 +278,13 @@
             <div class="card-body">
                 <h5 class="section-title">Category-wise Spending</h5>
 
-                {% if category_breakdown %}
+                {% if chart_category_breakdown %}
                     <div class="chart-container">
                         <canvas id="categoryChart"></canvas>
                     </div>
                 {% else %}
                     <div class="empty-state">
-                        No category spending data available.
+                        No positive net category spending available for this period.
                     </div>
                 {% endif %}
             </div>
@@ -296,13 +296,13 @@
             <div class="card-body">
                 <h5 class="section-title">Payment Method Breakdown</h5>
 
-                {% if payment_method_breakdown %}
+                {% if chart_payment_breakdown %}
                     <div class="chart-container">
                         <canvas id="paymentMethodChart"></canvas>
                     </div>
                 {% else %}
                     <div class="empty-state">
-                        No payment method data available.
+                        No positive net spending by payment method available for this period.
                     </div>
                 {% endif %}
             </div>
@@ -532,8 +532,6 @@
 </div>
 
 {% endblock %}
-
-
 {% block extra_js %}
 
 <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
@@ -621,7 +619,7 @@ document.addEventListener("DOMContentLoaded", function () {
 
             data: {
                 labels: [
-                    {% for item in category_breakdown %}
+                    {% for item in chart_category_breakdown %}
                         {{ item.category_name|tojson }}{% if not loop.last %},{% endif %}
                     {% endfor %}
                 ],
@@ -630,13 +628,13 @@ document.addEventListener("DOMContentLoaded", function () {
                     label: "Net Expenses",
 
                     data: [
-                        {% for item in category_breakdown %}
+                        {% for item in chart_category_breakdown %}
                             {{ item.net_expenses|float|tojson }}{% if not loop.last %},{% endif %}
                         {% endfor %}
                     ],
 
                     backgroundColor: [
-                        {% for item in category_breakdown %}
+                        {% for item in chart_category_breakdown %}
                             {{ item.color|tojson }}{% if not loop.last %},{% endif %}
                         {% endfor %}
                     ],
@@ -671,7 +669,7 @@ document.addEventListener("DOMContentLoaded", function () {
 
             data: {
                 labels: [
-                    {% for item in payment_method_breakdown %}
+                    {% for item in chart_payment_breakdown %}
                         {{ item.payment_method|tojson }}{% if not loop.last %},{% endif %}
                     {% endfor %}
                 ],
@@ -680,7 +678,7 @@ document.addEventListener("DOMContentLoaded", function () {
                     label: "Net Expenses",
 
                     data: [
-                        {% for item in payment_method_breakdown %}
+                        {% for item in chart_payment_breakdown %}
                             {{ item.net_expenses|float|tojson }}{% if not loop.last %},{% endif %}
                         {% endfor %}
                     ],
