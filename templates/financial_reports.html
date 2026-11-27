@@ -1,0 +1,718 @@
+
+{% extends "base.html" %}
+
+{% block title %}Financial Reports | AI Personal Finance Assistant{% endblock %}
+
+{% block extra_css %}
+<style>
+    .report-header {
+        margin-bottom: 25px;
+    }
+
+    .report-card {
+        border: none;
+        border-radius: 14px;
+        box-shadow: 0 3px 12px rgba(0, 0, 0, 0.06);
+        height: 100%;
+    }
+
+    .metric-label {
+        color: #6c757d;
+        font-size: 0.9rem;
+        margin-bottom: 8px;
+    }
+
+    .metric-value {
+        font-size: 1.55rem;
+        font-weight: 700;
+        overflow-wrap: anywhere;
+    }
+
+    .chart-container {
+        position: relative;
+        height: 320px;
+        width: 100%;
+    }
+
+    .section-title {
+        font-weight: 700;
+        margin-bottom: 18px;
+    }
+
+    .filter-card {
+        background: #fff;
+        border: none;
+        border-radius: 14px;
+        box-shadow: 0 3px 12px rgba(0, 0, 0, 0.06);
+    }
+
+    .table th {
+        color: #6c757d;
+        font-size: 0.85rem;
+        white-space: nowrap;
+    }
+
+    .empty-state {
+        color: #6c757d;
+        padding: 35px 10px;
+        text-align: center;
+    }
+</style>
+{% endblock %}
+
+
+{% block content %}
+
+<div class="report-header d-flex justify-content-between align-items-center flex-wrap gap-3">
+    <div>
+        <h2 class="fw-bold mb-1">Financial Reports</h2>
+        <p class="text-muted mb-0">
+            Understand your financial performance and spending patterns.
+        </p>
+    </div>
+</div>
+
+
+<!-- =====================================================
+     DATE FILTERS
+===================================================== -->
+
+<div class="card filter-card mb-4">
+    <div class="card-body">
+        <form method="GET" action="{{ url_for('financial_reports.financial_reports_page') }}">
+
+            <div class="row g-3 align-items-end">
+
+                <div class="col-md-3">
+                    <label for="start_date" class="form-label">
+                        Start Date
+                    </label>
+                    <input
+                        type="date"
+                        class="form-control"
+                        id="start_date"
+                        name="start_date"
+                        value="{{ start_date.isoformat() }}"
+                        required
+                    >
+                </div>
+
+                <div class="col-md-3">
+                    <label for="end_date" class="form-label">
+                        End Date
+                    </label>
+                    <input
+                        type="date"
+                        class="form-control"
+                        id="end_date"
+                        name="end_date"
+                        value="{{ end_date.isoformat() }}"
+                        required
+                    >
+                </div>
+
+                <div class="col-md-3">
+                    <label for="group_by" class="form-label">
+                        Reporting Frequency
+                    </label>
+                    <select
+                        class="form-select"
+                        id="group_by"
+                        name="group_by"
+                    >
+                        <option value="daily" {% if group_by == "daily" %}selected{% endif %}>
+                            Daily
+                        </option>
+                        <option value="monthly" {% if group_by == "monthly" %}selected{% endif %}>
+                            Monthly
+                        </option>
+                        <option value="quarterly" {% if group_by == "quarterly" %}selected{% endif %}>
+                            Quarterly
+                        </option>
+                        <option value="yearly" {% if group_by == "yearly" %}selected{% endif %}>
+                            Yearly
+                        </option>
+                    </select>
+                </div>
+
+                <div class="col-md-3">
+                    <button type="submit" class="btn btn-primary w-100">
+                        Apply Filters
+                    </button>
+                </div>
+
+            </div>
+        </form>
+    </div>
+</div>
+
+
+<!-- =====================================================
+     FINANCIAL SUMMARY
+===================================================== -->
+
+<h5 class="section-title">Financial Overview</h5>
+
+<div class="row g-3 mb-4">
+
+    <div class="col-md-4 col-lg-3">
+        <div class="card report-card">
+            <div class="card-body">
+                <div class="metric-label">Total Income</div>
+                <div class="metric-value text-success">
+                    ₹{{ "{:,.2f}".format(summary.income) }}
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <div class="col-md-4 col-lg-3">
+        <div class="card report-card">
+            <div class="card-body">
+                <div class="metric-label">Total Expenses</div>
+                <div class="metric-value text-danger">
+                    ₹{{ "{:,.2f}".format(summary.expenses) }}
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <div class="col-md-4 col-lg-3">
+        <div class="card report-card">
+            <div class="card-body">
+                <div class="metric-label">Refunds Received</div>
+                <div class="metric-value text-primary">
+                    ₹{{ "{:,.2f}".format(summary.refunds) }}
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <div class="col-md-4 col-lg-3">
+        <div class="card report-card">
+            <div class="card-body">
+                <div class="metric-label">Net Expenses</div>
+                <div class="metric-value">
+                    ₹{{ "{:,.2f}".format(summary.net_expenses) }}
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <div class="col-md-4 col-lg-3">
+        <div class="card report-card">
+            <div class="card-body">
+                <div class="metric-label">Net Cash Flow</div>
+                <div class="metric-value {% if summary.net_cash_flow >= 0 %}text-success{% else %}text-danger{% endif %}">
+                    ₹{{ "{:,.2f}".format(summary.net_cash_flow) }}
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <div class="col-md-4 col-lg-3">
+        <div class="card report-card">
+            <div class="card-body">
+                <div class="metric-label">Savings Rate</div>
+                <div class="metric-value text-info">
+                    {{ "{:.2f}".format(summary.savings_rate) }}%
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <div class="col-md-4 col-lg-3">
+        <div class="card report-card">
+            <div class="card-body">
+                <div class="metric-label">Savings</div>
+                <div class="metric-value">
+                    ₹{{ "{:,.2f}".format(summary.savings) }}
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <div class="col-md-4 col-lg-3">
+        <div class="card report-card">
+            <div class="card-body">
+                <div class="metric-label">Investments</div>
+                <div class="metric-value">
+                    ₹{{ "{:,.2f}".format(summary.investments) }}
+                </div>
+            </div>
+        </div>
+    </div>
+
+</div>
+
+
+<!-- =====================================================
+     INCOME VS EXPENSE TREND
+===================================================== -->
+
+<h5 class="section-title">Income vs. Expense Trends</h5>
+
+<div class="card report-card mb-4">
+    <div class="card-body">
+        {% if income_expense_trend %}
+            <div class="chart-container">
+                <canvas id="incomeExpenseChart"></canvas>
+            </div>
+        {% else %}
+            <div class="empty-state">
+                No income or expense data available for this period.
+            </div>
+        {% endif %}
+    </div>
+</div>
+
+
+<!-- =====================================================
+     CATEGORY AND PAYMENT METHOD ANALYSIS
+===================================================== -->
+
+<div class="row g-4 mb-4">
+
+    <div class="col-lg-6">
+        <div class="card report-card">
+            <div class="card-body">
+                <h5 class="section-title">Category-wise Spending</h5>
+
+                {% if category_breakdown %}
+                    <div class="chart-container">
+                        <canvas id="categoryChart"></canvas>
+                    </div>
+                {% else %}
+                    <div class="empty-state">
+                        No category spending data available.
+                    </div>
+                {% endif %}
+            </div>
+        </div>
+    </div>
+
+    <div class="col-lg-6">
+        <div class="card report-card">
+            <div class="card-body">
+                <h5 class="section-title">Payment Method Breakdown</h5>
+
+                {% if payment_method_breakdown %}
+                    <div class="chart-container">
+                        <canvas id="paymentMethodChart"></canvas>
+                    </div>
+                {% else %}
+                    <div class="empty-state">
+                        No payment method data available.
+                    </div>
+                {% endif %}
+            </div>
+        </div>
+    </div>
+
+</div>
+
+
+<!-- =====================================================
+     CATEGORY DETAILS
+===================================================== -->
+
+<div class="card report-card mb-4">
+    <div class="card-body">
+
+        <h5 class="section-title">Category Expense Details</h5>
+
+        {% if category_breakdown %}
+            <div class="table-responsive">
+                <table class="table table-hover align-middle">
+
+                    <thead>
+                        <tr>
+                            <th>Category</th>
+                            <th>Expenses</th>
+                            <th>Refunds</th>
+                            <th>Net Expenses</th>
+                        </tr>
+                    </thead>
+
+                    <tbody>
+                        {% for item in category_breakdown %}
+                        <tr>
+                            <td>
+                                {{ item.category_name }}
+                            </td>
+                            <td>
+                                ₹{{ "{:,.2f}".format(item.expenses) }}
+                            </td>
+                            <td>
+                                ₹{{ "{:,.2f}".format(item.refunds) }}
+                            </td>
+                            <td class="fw-semibold">
+                                ₹{{ "{:,.2f}".format(item.net_expenses) }}
+                            </td>
+                        </tr>
+                        {% endfor %}
+                    </tbody>
+
+                </table>
+            </div>
+        {% else %}
+            <div class="empty-state">
+                No category data available for this period.
+            </div>
+        {% endif %}
+
+    </div>
+</div>
+
+
+<!-- =====================================================
+     PAYMENT METHOD DETAILS
+===================================================== -->
+
+<div class="card report-card mb-4">
+    <div class="card-body">
+
+        <h5 class="section-title">Payment Method Details</h5>
+
+        {% if payment_method_breakdown %}
+            <div class="table-responsive">
+                <table class="table table-hover align-middle">
+
+                    <thead>
+                        <tr>
+                            <th>Payment Method</th>
+                            <th>Expenses</th>
+                            <th>Refunds</th>
+                            <th>Net Expenses</th>
+                        </tr>
+                    </thead>
+
+                    <tbody>
+                        {% for item in payment_method_breakdown %}
+                        <tr>
+                            <td>{{ item.payment_method }}</td>
+                            <td>₹{{ "{:,.2f}".format(item.expenses) }}</td>
+                            <td>₹{{ "{:,.2f}".format(item.refunds) }}</td>
+                            <td class="fw-semibold">
+                                ₹{{ "{:,.2f}".format(item.net_expenses) }}
+                            </td>
+                        </tr>
+                        {% endfor %}
+                    </tbody>
+
+                </table>
+            </div>
+        {% else %}
+            <div class="empty-state">
+                No payment method data available.
+            </div>
+        {% endif %}
+
+    </div>
+</div>
+
+
+<!-- =====================================================
+     BUDGET VS ACTUAL
+===================================================== -->
+
+<div class="card report-card mb-4">
+    <div class="card-body">
+
+        <h5 class="section-title">Budget vs. Actual Spending</h5>
+
+        <p class="text-muted small">
+            This comparison includes only complete calendar months
+            within your selected date range.
+        </p>
+
+        {% if budget_comparison %}
+            <div class="table-responsive">
+                <table class="table table-hover align-middle">
+
+                    <thead>
+                        <tr>
+                            <th>Month</th>
+                            <th>Category</th>
+                            <th>Budget</th>
+                            <th>Actual</th>
+                            <th>Remaining</th>
+                            <th>Usage</th>
+                        </tr>
+                    </thead>
+
+                    <tbody>
+                        {% for item in budget_comparison %}
+                        <tr>
+                            <td>
+                                {{ "%02d"|format(item.month) }}/{{ item.year }}
+                            </td>
+
+                            <td>{{ item.category_name }}</td>
+
+                            <td>
+                                ₹{{ "{:,.2f}".format(item.budget_amount) }}
+                            </td>
+
+                            <td>
+                                ₹{{ "{:,.2f}".format(item.actual_amount) }}
+                            </td>
+
+                            <td class="{% if item.remaining < 0 %}text-danger{% else %}text-success{% endif %}">
+                                ₹{{ "{:,.2f}".format(item.remaining) }}
+                            </td>
+
+                            <td style="min-width: 150px;">
+                                <div class="d-flex justify-content-between small mb-1">
+                                    <span>{{ "{:.1f}".format(item.percentage_used) }}%</span>
+
+                                    {% if item.is_over_budget %}
+                                        <span class="text-danger fw-semibold">
+                                            Over budget
+                                        </span>
+                                    {% endif %}
+                                </div>
+
+                                <div class="progress" style="height: 7px;">
+                                    <div
+                                        class="progress-bar {% if item.is_over_budget %}bg-danger{% else %}bg-success{% endif %}"
+                                        role="progressbar"
+                                        style="width: {{ [item.percentage_used, 100]|min }}%;"
+                                        aria-valuenow="{{ item.percentage_used }}"
+                                        aria-valuemin="0"
+                                        aria-valuemax="100"
+                                    ></div>
+                                </div>
+                            </td>
+
+                        </tr>
+                        {% endfor %}
+                    </tbody>
+
+                </table>
+            </div>
+        {% else %}
+            <div class="empty-state">
+                No complete-month budget data available for this date range.
+            </div>
+        {% endif %}
+
+    </div>
+</div>
+
+
+<!-- =====================================================
+     ADDITIONAL FINANCIAL DETAILS
+===================================================== -->
+
+<div class="row g-3 mb-4">
+
+    <div class="col-md-6">
+        <div class="card report-card">
+            <div class="card-body">
+                <div class="metric-label">Loans</div>
+                <div class="metric-value">
+                    ₹{{ "{:,.2f}".format(summary.loans) }}
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <div class="col-md-6">
+        <div class="card report-card">
+            <div class="card-body">
+                <div class="metric-label">Transactions Analyzed</div>
+                <div class="metric-value">
+                    {{ summary.transaction_count }}
+                </div>
+            </div>
+        </div>
+    </div>
+
+</div>
+
+{% endblock %}
+
+
+{% block extra_js %}
+
+<script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+
+<script>
+document.addEventListener("DOMContentLoaded", function () {
+
+    const chartFont = {
+        family: "system-ui, sans-serif"
+    };
+
+    // Income vs Expense Chart
+    const incomeExpenseCanvas = document.getElementById(
+        "incomeExpenseChart"
+    );
+
+    if (incomeExpenseCanvas) {
+
+        new Chart(incomeExpenseCanvas, {
+            type: "bar",
+
+            data: {
+                labels: [
+                    {% for item in income_expense_trend %}
+                        {{ item.period|tojson }}{% if not loop.last %},{% endif %}
+                    {% endfor %}
+                ],
+
+                datasets: [
+                    {
+                        label: "Income",
+
+                        data: [
+                            {% for item in income_expense_trend %}
+                                {{ item.income|float|tojson }}{% if not loop.last %},{% endif %}
+                            {% endfor %}
+                        ],
+
+                        backgroundColor: "#198754",
+                        borderRadius: 5
+                    },
+
+                    {
+                        label: "Expenses",
+
+                        data: [
+                            {% for item in income_expense_trend %}
+                                {{ item.net_expenses|float|tojson }}{% if not loop.last %},{% endif %}
+                            {% endfor %}
+                        ],
+
+                        backgroundColor: "#dc3545",
+                        borderRadius: 5
+                    }
+                ]
+            },
+
+            options: {
+                responsive: true,
+                maintainAspectRatio: false,
+
+                plugins: {
+                    legend: {
+                        position: "top"
+                    }
+                },
+
+                scales: {
+                    y: {
+                        beginAtZero: true
+                    }
+                }
+            }
+        });
+    }
+
+
+    // Category Chart
+    const categoryCanvas = document.getElementById("categoryChart");
+
+    if (categoryCanvas) {
+
+        new Chart(categoryCanvas, {
+            type: "doughnut",
+
+            data: {
+                labels: [
+                    {% for item in category_breakdown %}
+                        {{ item.category_name|tojson }}{% if not loop.last %},{% endif %}
+                    {% endfor %}
+                ],
+
+                datasets: [{
+                    label: "Net Expenses",
+
+                    data: [
+                        {% for item in category_breakdown %}
+                            {{ item.net_expenses|float|tojson }}{% if not loop.last %},{% endif %}
+                        {% endfor %}
+                    ],
+
+                    backgroundColor: [
+                        {% for item in category_breakdown %}
+                            {{ item.color|tojson }}{% if not loop.last %},{% endif %}
+                        {% endfor %}
+                    ],
+
+                    borderWidth: 1
+                }]
+            },
+
+            options: {
+                responsive: true,
+                maintainAspectRatio: false,
+
+                plugins: {
+                    legend: {
+                        position: "bottom"
+                    }
+                }
+            }
+        });
+    }
+
+
+    // Payment Method Chart
+    const paymentCanvas = document.getElementById(
+        "paymentMethodChart"
+    );
+
+    if (paymentCanvas) {
+
+        new Chart(paymentCanvas, {
+            type: "doughnut",
+
+            data: {
+                labels: [
+                    {% for item in payment_method_breakdown %}
+                        {{ item.payment_method|tojson }}{% if not loop.last %},{% endif %}
+                    {% endfor %}
+                ],
+
+                datasets: [{
+                    label: "Net Expenses",
+
+                    data: [
+                        {% for item in payment_method_breakdown %}
+                            {{ item.net_expenses|float|tojson }}{% if not loop.last %},{% endif %}
+                        {% endfor %}
+                    ],
+
+                    backgroundColor: [
+                        "#0d6efd",
+                        "#198754",
+                        "#ffc107",
+                        "#dc3545",
+                        "#6610f2",
+                        "#20c997",
+                        "#fd7e14"
+                    ],
+
+                    borderWidth: 1
+                }]
+            },
+
+            options: {
+                responsive: true,
+                maintainAspectRatio: false,
+
+                plugins: {
+                    legend: {
+                        position: "bottom"
+                    }
+                }
+            }
+        });
+    }
+
+});
+</script>
+
+{% endblock %}

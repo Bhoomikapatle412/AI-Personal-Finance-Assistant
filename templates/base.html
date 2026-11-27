@@ -42,23 +42,33 @@
             <ul class="navbar-nav ms-auto">
 
                 <li class="nav-item">
-                    <a class="nav-link" href="/dashboard">Dashboard</a>
+                    <a class="nav-link" href="{{ url_for('dashboard.dashboard') }}">
+                        Dashboard
+                    </a>
                 </li>
 
                 <li class="nav-item">
-                    <a class="nav-link" href="/transactions">Transactions</a>
+                    <a class="nav-link" href="{{ url_for('transactions.transactions') }}">
+                        Transactions
+                    </a>
                 </li>
 
                 <li class="nav-item">
-                    <a class="nav-link" href="/transactions/ai">AI Entry</a>
+                    <a class="nav-link" href="{{ url_for('transaction.ai_add_transaction') }}">
+                        AI Entry
+                    </a>
                 </li>
 
                 <li class="nav-item">
-                    <a class="nav-link" href="/budgets/page">Budgets</a>
+                    <a class="nav-link" href="/budgets/page">
+                        Budgets
+                    </a>
                 </li>
 
                 <li class="nav-item">
-                    <a class="nav-link" href="/recurring/page">Recurring</a>
+                    <a class="nav-link" href="/recurring/page">
+                        Recurring
+                    </a>
                 </li>
 
                 <li class="nav-item">
@@ -73,13 +83,41 @@
                     </a>
                 </li>
 
+                <li class="nav-item">
+                    <a class="nav-link" href="{{ url_for('financial_reports.financial_reports_page') }}">
+                        Reports
+                    </a>
+                </li>
+
             </ul>
         </div>
     </div>
 </nav>
 
 <div class="container mt-4">
+
+    {% with messages = get_flashed_messages(with_categories=true) %}
+        {% if messages %}
+            {% for category, message in messages %}
+                <div
+                    class="alert alert-{{ 'danger' if category == 'error' else category }} alert-dismissible fade show"
+                    role="alert"
+                >
+                    {{ message }}
+
+                    <button
+                        type="button"
+                        class="btn-close"
+                        data-bs-dismiss="alert"
+                        aria-label="Close"
+                    ></button>
+                </div>
+            {% endfor %}
+        {% endif %}
+    {% endwith %}
+
     {% block content %}{% endblock %}
+
 </div>
 
 {% block extra_js %}{% endblock %}

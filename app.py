@@ -23,6 +23,7 @@ from routes.budget import budget_bp
 from routes.recurring import recurring_bp
 from routes.financial_goals import financial_goals_bp
 from routes.subscription_bills import subscription_bills_bp
+from routes.financial_reports import financial_reports_bp
 
 
 def create_app():
@@ -49,6 +50,7 @@ def create_app():
     app.register_blueprint(recurring_bp)
     app.register_blueprint(financial_goals_bp)
     app.register_blueprint(subscription_bills_bp)
+    app.register_blueprint(financial_reports_bp)
 
     return app
 
